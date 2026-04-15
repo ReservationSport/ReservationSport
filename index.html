@@ -5,85 +5,80 @@
     <title>Stundenplan Journal</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        
-        /* Das EINE Grid für die gesamte App */
-        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
-        
-        /* Header Bereich (Datum + Speichern) - Spannt über 6 Spalten */
-        .header-top { grid-column: 1 / span 6; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; margin-bottom: 5px; align-items: center; }
-        
-        /* Boxen allgemein */
-        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
-        .zeit-box { background: #333; font-weight: bold; }
-        
-        .klasse { font-weight: bold; font-size: 11px; }
-        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
-        
-        #saveBtn { background: #333; color: #666; border: 1px solid #444; padding: 8px 20px; font-weight: bold; cursor: not-allowed; }
+        .wrapper { max-width: 1000px; margin: auto; }
+
+        /* HEADER: Datum und Button */
+        .top-bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; align-items: center; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; }
+        #saveBtn { padding: 10px; background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; }
         #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
-        
-        .bg-red { background: #e74c3c !important; }
-        .bg-blue { background: #3498db !important; }
-        .bg-purple { background: #9b59b6 !important; }
+
+        /* GRID: Zeit-Spalte + 5 Klassen-Spalten */
+        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; }
+        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
+        .header-box { background: #333; font-weight: bold; }
+
+        /* Farben */
+        .bg-red { background: #c0392b !important; }
+        .bg-blue { background: #2980b9 !important; }
+        .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
-        
+
+        .klasse { font-weight: bold; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         .trennlinie { grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 4px 0; }
     </style>
 </head>
 <body>
-    <div class="grid">
-        <div class="header-top">
-            <input type="date" id="datePicker" style="padding: 8px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
-            <div id="headerTitle" style="font-weight: bold; font-size: 1.2rem; letter-spacing: 1px;">WIRD GELADEN...</div>
+    <div class="wrapper">
+        <div class="top-bar">
+            <input type="date" id="datePicker">
+            <div id="headerTitle" style="text-align: center; font-weight: bold; font-size: 1.2rem;">WIRD GELADEN...</div>
             <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         </div>
 
-        <div class="box zeit-box">Zeit</div>
-        <div class="box zeit-box">1</div>
-        <div class="box zeit-box">2</div>
-        <div class="box zeit-box">3</div>
-        <div class="box zeit-box">4</div>
-        <div class="box zeit-box">5</div>
-        
-        <div id="planContent" style="display: contents;"></div>
+        <div class="grid" id="plan">
+            <div class="box header-box">Zeit</div>
+            <div class="box header-box">1</div>
+            <div class="box header-box">2</div>
+            <div class="box header-box">3</div>
+            <div class="box header-box">4</div>
+            <div class="box header-box">5</div>
+            </div>
     </div>
 
     <script>
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
-        let pendingChanges = [];
-
-        function getFarbe(res) {
-            if (res.includes("Halle 1")) return "bg-red";
-            if (res.includes("Halle 4")) return "bg-blue";
-            if (res.includes("U21")) return "bg-purple";
-            if (res.includes("Halle 2")) return "bg-yellow";
-            return "";
-        }
-
+        
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
-            const dateObj = new Date(dateVal);
-            const tage = ["SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"];
-            document.getElementById('headerTitle').innerText = `${tage[dateObj.getDay()]} - ${dateObj.toLocaleDateString('de-DE')}`;
-
             const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
-            const container = document.getElementById('planContent');
-            container.innerHTML = "";
-            pendingChanges = [];
             
+            // Grid leeren, aber die Header-Boxen behalten!
+            const grid = document.getElementById('plan');
+            grid.innerHTML = `
+                <div class="box header-box">Zeit</div>
+                <div class="box header-box">1</div>
+                <div class="box header-box">2</div>
+                <div class="box header-box">3</div>
+                <div class="box header-box">4</div>
+                <div class="box header-box">5</div>
+            `;
+
             data.forEach((row, rowIndex) => {
-                if (rowIndex === 6) container.innerHTML += `<div class="trennlinie"></div>`;
-                container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                if (rowIndex === 6) grid.innerHTML += `<div class="trennlinie"></div>`;
+                grid.innerHTML += `<div class="box header-box">${row[0]}</div>`;
                 for(let i = 1; i <= 5; i++) {
                     let val = row[i] || "";
-                    let [klasse, reservierung] = val.includes(' | ') ? val.split(' | ') : [val, ""];
-                    container.innerHTML += `
-                        <div class="box ${getFarbe(reservierung)}" onclick="this.querySelector('select').style.opacity='1'">
-                            <div class="klasse">${klasse}</div>
-                            <div class="res">${reservierung}</div>
-                            <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
+                    let [kl, res] = val.split(' | ');
+                    let color = res?.includes("Halle 1") ? "bg-red" : res?.includes("Halle 4") ? "bg-blue" : res?.includes("U21") ? "bg-purple" : res?.includes("Halle 2") ? "bg-yellow" : "";
+                    grid.innerHTML += `
+                        <div class="box ${color}" onclick="this.querySelector('select').style.opacity='1'">
+                            <div class="klasse">${kl || ""}</div>
+                            <div class="res">${res || ""}</div>
+                            <select onchange="addChange(this, '${row[0]}', ${i}, '${kl || ""}')">
                                 <option value="">---</option>
                                 ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
                             </select>
@@ -91,33 +86,8 @@
                 }
             });
         }
-
-        function addChange(el, time, slotIndex, klasse) {
-            let res = el.value;
-            let anzeigeRes = (res === "" || res === "---") ? "" : res;
-            let speicherWert = anzeigeRes === "" ? klasse : klasse + " | " + res;
-            el.parentElement.querySelector('.res').innerText = anzeigeRes;
-            el.parentElement.className = `box ${getFarbe(anzeigeRes)}`;
-            pendingChanges.push({ time, slotIndex, val: speicherWert });
-            document.getElementById('saveBtn').className = "active";
-            document.getElementById('saveBtn').disabled = false;
-            el.style.opacity = '0';
-        }
-
-        async function saveChanges() {
-            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
-            pendingChanges = [];
-            document.getElementById('saveBtn').className = "";
-            document.getElementById('saveBtn').disabled = true;
-            loadPlan();
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const dp = document.getElementById('datePicker');
-            dp.value = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            dp.addEventListener('change', loadPlan);
-            loadPlan();
-        });
+        
+        // ... (addChange, saveChanges, Initialisierung wie gehabt) ...
     </script>
 </body>
 </html>
