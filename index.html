@@ -7,16 +7,18 @@
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .wrapper { max-width: 1000px; margin: auto; }
         
-        .top-bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; }
-        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; }
-        #saveBtn { background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; }
+        .top-bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; align-items: center; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; width: 100%; box-sizing: border-box; }
+        #saveBtn { padding: 10px; background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; width: 100%; }
         #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
         
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .header-box { background: #333; font-weight: bold; }
         
+        /* Dieser Bereich ist NUR für die Daten gedacht */
         #dataArea { display: contents; } 
+        
         .trennlinie { grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 4px 0; }
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
@@ -56,6 +58,7 @@
             const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
             
+            // Nur dataArea leeren, der Rest bleibt stehen!
             const dataArea = document.getElementById('dataArea');
             dataArea.innerHTML = ""; 
             
@@ -84,7 +87,7 @@
             document.getElementById('datePicker').addEventListener('change', loadPlan);
             loadPlan();
         });
-        // ... (addChange und saveChanges wie gehabt)
+        // addChange und saveChanges bleiben wie gewohnt
     </script>
 </body>
 </html>
