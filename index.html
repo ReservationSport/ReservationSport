@@ -2,32 +2,32 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Sport Planer</title>
+    <title>Sport Planer - Interaktiv</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 45px; position: relative; }
+        .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 45px; position: relative; transition: all 0.2s; }
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
         
-        /* Status-Farben */
-        .besetzt { color: white; }
-        .geaendert { border: 2px solid #fff !important; } 
-        
+        /* Farben für die Hallen */
         .halle1 { background-color: #e74c3c !important; } /* Rot */
         .halle2 { background-color: #f1c40f !important; color: black !important; } /* Gelb */
         .halle3 { background-color: #2ecc71 !important; } /* Grün */
         .halle4 { background-color: #3498db !important; } /* Blau */
         .u21    { background-color: #9b59b6 !important; } /* Lila */
         
+        /* Status-Indikatoren */
+        .geaendert { border: 2px solid #ffffff !important; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .klasse { font-weight: bold; display: block; font-size: 0.9em; }
         .status { font-size: 0.8em; color: #ccc; font-style: italic; display: block; }
-        .besetzt .status { color: #fff; }
+        .besetzt .status { color: #fff; font-weight: bold; }
         
         select { width: 100%; padding: 5px; background: #444; color: white; border: none; margin-top: 5px; }
         
-        #controls { text-align: center; margin-bottom: 20px; position: sticky; top: 0; background: #1a1a1a; padding: 10px; z-index: 100; }
+        #controls { text-align: center; margin-bottom: 20px; position: sticky; top: 0; background: #1a1a1a; padding: 10px; z-index: 100; border-bottom: 1px solid #333; }
         button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #2ecc71; }
         #status-msg { margin-left: 15px; color: #e67e22; font-weight: bold; }
     </style>
 </head>
@@ -35,7 +35,7 @@
 
     <div id="controls">
         <button onclick="saveAllChanges()">Änderungen jetzt speichern</button>
-        <span id="status-msg"></span>
+        <span id="status-msg">Bereit.</span>
     </div>
 
     <div class="grid" id="plan">
@@ -50,12 +50,14 @@
         let pendingChanges = [];
 
         function getColorClass(status) {
-            if (status === "Halle 1") return "halle1";
-            if (status === "Halle 2") return "halle2";
-            if (status === "Halle 3") return "halle3";
-            if (status === "Halle 4") return "halle4";
-            if (status === "U21") return "u21";
-            return "";
+            const classes = {
+                "Halle 1": "halle1",
+                "Halle 2": "halle2",
+                "Halle 3": "halle3",
+                "Halle 4": "halle4",
+                "U21": "u21"
+            };
+            return classes[status] || "";
         }
 
         fetch(url)
@@ -70,54 +72,63 @@
                         let parts = val.split("|");
                         let klasseName = parts[0].trim();
                         let statusName = (parts[1] || "").trim();
-                        let colorClass = getColorClass(statusName);
+                        let cClass = getColorClass(statusName);
 
                         container.innerHTML += `
-                            <div class="box ${statusName ? 'besetzt ' + colorClass : ''}" onclick="showSelect(this)">
+                            <div class="box ${statusName ? 'besetzt ' + cClass : ''}" onclick="openMenu(this)">
                                 <span class="klasse">${klasseName}</span>
                                 <span class="status">${statusName || "frei"}</span>
-                                <select style="display:none" data-klasse="${klasseName}" onchange="markAsChanged(this, ${i}, ${j})">
-                                    <option value="">frei</option>
-                                    <option value="Halle 1">Halle 1</option>
-                                    <option value="Halle 2">Halle 2</option>
-                                    <option value="Halle 3">Halle 3</option>
-                                    <option value="Halle 4">Halle 4</option>
-                                    <option value="U21">U21</option>
+                                <select style="display:none" data-klasse="${klasseName}" onchange="updateView(this, ${i}, ${j})">
+                                    <option value="" ${statusName===''?'selected':''}>frei / zurücksetzen</option>
+                                    <option value="Halle 1" ${statusName==='Halle 1'?'selected':''}>Halle 1</option>
+                                    <option value="Halle 2" ${statusName==='Halle 2'?'selected':''}>Halle 2</option>
+                                    <option value="Halle 3" ${statusName==='Halle 3'?'selected':''}>Halle 3</option>
+                                    <option value="Halle 4" ${statusName==='Halle 4'?'selected':''}>Halle 4</option>
+                                    <option value="U21" ${statusName==='U21'?'selected':''}>U21</option>
                                 </select>
                             </div>`;
                     }
                 });
             });
 
-        function showSelect(box) {
+        function openMenu(box) {
             box.querySelector('.status').style.display = 'none';
             box.querySelector('select').style.display = 'block';
         }
 
-        function markAsChanged(selectEl, row, col) {
+        function updateView(selectEl, row, col) {
             let box = selectEl.parentElement;
             let klasse = selectEl.getAttribute('data-klasse');
             let status = selectEl.value;
-            let newVal = status ? (klasse + " | " + status) : klasse;
+            
+            // Logik für das Speichern: Wenn leer, dann nur die Klasse speichern
+            let finalVal = status ? (klasse + " | " + status) : klasse;
 
-            // Farben anpassen
-            box.className = 'box besetzt ' + getColorClass(status) + ' geaendert';
+            // Anzeige aktualisieren
+            box.className = 'box geaendert'; 
+            if(status) {
+                box.classList.add('besetzt', getColorClass(status));
+            }
+            
             box.querySelector('.status').innerText = status || "frei";
             box.querySelector('.status').style.display = 'block';
             selectEl.style.display = 'none';
 
+            // In die Liste der zu speichernden Änderungen aufnehmen
             pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
-            pendingChanges.push({ row, col, val: newVal });
+            pendingChanges.push({ row, col, val: finalVal });
             document.getElementById('status-msg').innerText = pendingChanges.length + " Änderung(en) ungespeichert!";
         }
 
         async function saveAllChanges() {
-            if (pendingChanges.length === 0) return alert("Keine Änderungen vorhanden.");
-            document.getElementById('status-msg').innerText = "Speichere...";
+            if (pendingChanges.length === 0) return;
+            document.getElementById('status-msg').innerText = "Speichere in Google Sheets...";
+            
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
-            alert("Erfolgreich gespeichert!");
+            
+            alert("Erfolgreich aktualisiert!");
             location.reload();
         }
     </script>
