@@ -3,61 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: #ffffff; padding: 20px; }
-        
-        .grid { 
-            display: grid; 
-            /* 150px für die Zeit + 5 gleiche Spalten für Klassen */
-            grid-template-columns: 150px repeat(5, 1fr); 
-            gap: 5px; 
-            max-width: 1000px; 
-            margin: auto; 
-        }
-        
-        .box { 
-            border: 1px solid #333; 
-            padding: 15px; 
-            text-align: center; 
-            background: #262626; 
-        }
-        
-        .header { background: #444; font-weight: bold; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #333; padding: 15px; text-align: center; background: #262626; cursor: pointer; min-height: 25px; }
+        .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
-        
-        /* Wenn ein Feld besetzt ist, wird es blau markiert */
-        .besetzt { background: #007bff; color: white; font-weight: bold; }
+        .besetzt { background: #007bff; color: white; }
+        select { width: 100%; background: #444; color: white; border: none; }
     </style>
 </head>
 <body>
-
-    <h2 style="text-align:center; color: #007bff;">SPORT PLANER</h2>
+    <h2 style="text-align:center;">SPORT PLANER</h2>
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
-        <div class="box header">1</div>
-        <div class="box header">2</div>
-        <div class="box header">3</div>
-        <div class="box header">4</div>
-        <div class="box header">5</div>
+        <div class="box header">Klasse 1</div><div class="box header">Klasse 2</div>
+        <div class="box header">Klasse 3</div><div class="box header">Klasse 4</div>
+        <div class="box header">Klasse 5</div>
     </div>
 
     <script>
-        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
+        const url = "DEINE_URL_HIER_EINTRAGEN";
 
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                const container = document.getElementById('plan');
-                for(let i = 1; i < data.length; i++) {
-                    let row = data[i];
-                    container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
-                    // Schleife läuft jetzt bis 5
-                    for(let j = 1; j <= 5; j++) {
-                        let inhalt = row[j] || "";
-                        let klasse = inhalt !== "" ? "besetzt" : "";
-                        container.innerHTML += `<div class="box ${klasse}">${inhalt}</div>`;
-                    }
+        fetch(url).then(r => r.json()).then(data => {
+            const container = document.getElementById('plan');
+            data.forEach((row, i) => {
+                if(i === 0) return; // Überspringe Header-Zeile
+                container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
+                for(let j = 1; j <= 5; j++) {
+                    let val = row[j] || "";
+                    container.innerHTML += `
+                        <div class="box ${val ? 'besetzt' : ''}" onclick="this.querySelector('select').style.display='block'; this.querySelector('span').style.display='none';">
+                            <span>${val}</span>
+                            <select style="display:none" onchange="saveData(${i}, ${j}, this.value)">
+                                <option value="">frei</option>
+                                <option value="Halle 1">Halle 1</option>
+                                <option value="Halle 2">Halle 2</option>
+                                <option value="Halle 3">Halle 3</option>
+                                <option value="Halle 4">Halle 4</option>
+                                <option value="U21">U21</option>
+                            </select>
+                        </div>`;
                 }
             });
+        });
+
+        function saveData(row, col, val) {
+            fetch(url, {
+                method: "POST",
+                body: JSON.stringify({row, col, val})
+            }).then(() => location.reload());
+        }
     </script>
 </body>
 </html>
