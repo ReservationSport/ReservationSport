@@ -6,29 +6,47 @@
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 10px; background: #262626; cursor: pointer; min-height: 55px; position: relative; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .header { background: #444; font-weight: bold; cursor: default; }
-        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; justify-content: flex-start; align-items: flex-start; padding-left: 15px; }
         
-        .header-tag { background: #444 !important; color: #fff; font-weight: bold; grid-column: span 4; font-size: 1.5em; padding: 15px; }
+        /* Boxen: Jetzt mit flexibler Ausrichtung für perfekte vertikale & horizontale Zentrierung */
+        .box { 
+            border: 1px solid #333; 
+            padding: 5px; 
+            background: #262626; 
+            cursor: pointer; 
+            min-height: 55px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; /* Vertikal zentriert */
+            align-items: center;     /* Horizontal zentriert */
+            text-align: center;
+        }
         
-        .btn-cell { background: #444 !important; border: none; display: flex; align-items: center; justify-content: center; }
+        /* Spezielle Ausrichtung für die Zeitspalte */
+        .zeit { 
+            background: #333; 
+            border-right: 2px solid #555; 
+            font-weight: bold;
+            display: flex;
+            justify-content: center; /* Zeit zentriert */
+            align-items: center; 
+        }
+
+        .header { background: #444; font-weight: bold; }
+        .header-tag { background: #444 !important; color: #fff; font-weight: bold; grid-column: span 4; font-size: 1.5em; display: flex; justify-content: center; align-items: center; }
         
-        /* Button ist standardmäßig matt grau */
-        .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: not-allowed; background: #555; color: #aaa; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; transition: all 0.3s; }
-        
-        /* Wird grün, wenn aktiv */
+        .btn-cell { background: #444 !important; display: flex; align-items: center; justify-content: center; }
+        .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: not-allowed; background: #555; color: #aaa; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
         .save-btn.active { background: #27ae60; color: white; cursor: pointer; }
         
+        /* Hallen-Farben */
         .halle1 { background-color: #e74c3c !important; }
         .halle2 { background-color: #f1c40f !important; color: black !important; }
         .halle3 { background-color: #2ecc71 !important; }
         .halle4 { background-color: #3498db !important; }
         .u21    { background-color: #9b59b6 !important; }
         
-        .geaendert { border: 2px solid #ffffff !important; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .klasse { font-weight: bold; font-size: 0.9em; }
-        .status { font-size: 0.8em; color: #fff; font-style: italic; min-height: 1em; }
+        .klasse { font-weight: bold; font-size: 0.9em; line-height: 1.2; }
+        .status { font-size: 0.8em; color: #fff; font-style: italic; margin-top: 2px; }
         
         select { width: 90%; padding: 5px; background: #444; color: white; border: none; }
     </style>
@@ -92,7 +110,7 @@
             let status = selectEl.value;
             let finalVal = status ? (klasse + " | " + status) : klasse;
 
-            box.className = 'box geaendert'; 
+            box.className = 'box'; 
             if(status) box.className += ' besetzt ' + getColorClass(status);
             
             box.querySelector('.status').innerText = status;
@@ -102,7 +120,6 @@
             pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
             pendingChanges.push({ row, col, val: finalVal });
 
-            // Button Logik: Farbe anpassen und aktivieren
             const btn = document.getElementById('saveBtn');
             if (pendingChanges.length > 0) {
                 btn.classList.add('active');
@@ -112,9 +129,7 @@
 
         async function saveAllChanges() {
             if (pendingChanges.length === 0) return;
-            const btn = document.getElementById('saveBtn');
-            btn.innerText = "Speichere...";
-            
+            document.getElementById('saveBtn').innerText = "Speichere...";
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
