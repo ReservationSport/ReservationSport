@@ -5,26 +5,23 @@
     <title>Stundenplan Journal</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .main-container { max-width: 1000px; margin: auto; }
         
-        /* Das EINE Grid für alles */
-        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
+        /* Header-Bereich (Datum + Button) */
+        .header-bar { display: grid; grid-template-columns: 1fr 200px 1fr; gap: 10px; margin-bottom: 10px; align-items: center; }
         
-        /* Header-Elemente, die sich in das 6-Spalten-Grid einfügen */
-        .header-top { grid-column: 1 / span 6; display: grid; grid-template-columns: 120px 1fr 120px; gap: 2px; margin-bottom: 2px; }
-        .header-item { background: #333; padding: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #444; }
-        
-        /* Die Spaltennummern-Zeile */
-        .col-header { background: #333; font-weight: bold; padding: 10px; text-align: center; border: 1px solid #444; }
-        
+        /* Das Grid */
+        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .zeit-box { background: #333; font-weight: bold; }
         
-        .klasse { font-weight: bold; font-size: 11px; }
-        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
-        
-        #saveBtn { background: #333; color: #666; border: 1px solid #444; width: 100%; height: 100%; font-weight: bold; cursor: not-allowed; }
+        /* Speichern Button */
+        #saveBtn { background: #333; color: #666; border: 1px solid #444; padding: 8px 20px; font-weight: bold; cursor: not-allowed; }
         #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
         
+        /* Klassen-Design */
+        .klasse { font-weight: bold; font-size: 11px; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         .bg-red { background: #e74c3c !important; }
         .bg-blue { background: #3498db !important; }
         .bg-purple { background: #9b59b6 !important; }
@@ -35,21 +32,22 @@
     </style>
 </head>
 <body>
-    <div class="grid">
-        <div class="header-top">
-            <div class="header-item">Zeit</div>
-            <div class="header-item" id="headerTitle">WIRD GELADEN...</div>
-            <div class="header-item" style="padding:0;"><button id="saveBtn" onclick="saveChanges()">SPEICHERN</button></div>
+    <div class="main-container">
+        <div class="header-bar">
+            <input type="date" id="datePicker" style="padding: 8px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
+            <div id="headerTitle" style="font-weight: bold; text-align: center;">WIRD GELADEN...</div>
+            <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         </div>
-        
-        <div class="col-header">Zeit</div>
-        <div class="col-header">1</div>
-        <div class="col-header">2</div>
-        <div class="col-header">3</div>
-        <div class="col-header">4</div>
-        <div class="col-header">5</div>
-        
-        <div id="planContent" style="display: contents;"></div>
+
+        <div class="grid">
+            <div class="box zeit-box">Zeit</div>
+            <div class="box zeit-box">1</div>
+            <div class="box zeit-box">2</div>
+            <div class="box zeit-box">3</div>
+            <div class="box zeit-box">4</div>
+            <div class="box zeit-box">5</div>
+            <div id="planContent" style="display: contents;"></div>
+        </div>
     </div>
 
     <script>
@@ -65,7 +63,7 @@
         }
 
         async function loadPlan() {
-            const dateVal = document.getElementById('datePicker') ? document.getElementById('datePicker').value : new Date().toISOString().split('T')[0];
+            const dateVal = document.getElementById('datePicker').value;
             const dateObj = new Date(dateVal);
             const tage = ["SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"];
             document.getElementById('headerTitle').innerText = `${tage[dateObj.getDay()]} - ${dateObj.toLocaleDateString('de-DE')}`;
@@ -74,6 +72,7 @@
             const data = await res.json();
             const container = document.getElementById('planContent');
             container.innerHTML = "";
+            pendingChanges = [];
             
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 6) container.innerHTML += `<div class="trennlinie"></div>`;
@@ -94,8 +93,33 @@
             });
         }
 
-        // ... (addChange, saveChanges, updateSaveBtn wie gehabt)
-        document.addEventListener("DOMContentLoaded", loadPlan);
+        function addChange(el, time, slotIndex, klasse) {
+            let res = el.value;
+            let anzeigeRes = (res === "" || res === "---") ? "" : res;
+            let speicherWert = anzeigeRes === "" ? klasse : klasse + " | " + res;
+            el.parentElement.querySelector('.res').innerText = anzeigeRes;
+            el.parentElement.className = `box ${getFarbe(anzeigeRes)}`;
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
+            document.getElementById('saveBtn').className = "active";
+            document.getElementById('saveBtn').disabled = false;
+            el.style.opacity = '0';
+        }
+
+        async function saveChanges() {
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
+            pendingChanges = [];
+            document.getElementById('saveBtn').className = "";
+            document.getElementById('saveBtn').disabled = true;
+            loadPlan();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const dp = document.getElementById('datePicker');
+            const heute = new Date();
+            dp.value = new Date(heute.getTime() - (heute.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            dp.addEventListener('change', loadPlan);
+            loadPlan();
+        });
     </script>
 </body>
 </html>
