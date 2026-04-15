@@ -10,6 +10,8 @@
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .zeit-box { background: #333; font-weight: bold; }
+        .klasse { font-weight: bold; margin-bottom: 2px; }
+        .res { color: #27ae60; font-size: 10px; font-weight: bold; } /* Hier steht die Reservierung */
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
     </style>
 </head>
@@ -22,7 +24,6 @@
     <div class="grid" id="plan"></div>
 
     <script>
-        // TRAGE HIER DEINE URL EIN:
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
         let pendingChanges = [];
 
@@ -39,12 +40,15 @@
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 for(let i = 1; i <= 5; i++) {
                     let val = row[i] || "";
-                    // Wir trennen die Klasse von der Reservierung (falls vorhanden)
-                    let klasse = val.split(' | ')[0];
+                    let teile = val.split(' | ');
+                    let klasse = teile[0];
+                    let reservierung = teile[1] || "";
+                    
                     container.innerHTML += `
                         <div class="box" onclick="this.querySelector('select').style.opacity='1'">
-                            <span data-original="${klasse}">${val}</span>
-                            <select onchange="addChange(this, '${row[0]}', ${i})">
+                            <div class="klasse">${klasse}</div>
+                            <div class="res">${reservierung}</div>
+                            <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
                                 <option value="">---</option>
                                 ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
                             </select>
@@ -54,13 +58,15 @@
             document.getElementById('loader').style.display = 'none';
         }
 
-        function addChange(el, time, slotIndex) {
+        function addChange(el, time, slotIndex, klasse) {
             let res = el.value;
-            let originalKlasse = el.parentElement.querySelector('span').getAttribute('data-original');
-            let neuerWert = (res === "" || res === "---") ? originalKlasse : originalKlasse + " | " + res;
+            let anzeigeText = (res === "" || res === "---") ? "" : res;
             
-            el.parentElement.querySelector('span').innerText = neuerWert;
-            pendingChanges.push({ time, slotIndex, val: neuerWert });
+            el.parentElement.querySelector('.res').innerText = anzeigeText;
+            // Wir speichern im Sheet wieder als "Klasse | Reservierung", damit es beim nächsten Laden wieder getrennt werden kann
+            let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
+            
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
             el.style.opacity = '0';
         }
 
