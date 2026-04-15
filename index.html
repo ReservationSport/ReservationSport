@@ -5,17 +5,17 @@
     <title>Sport Planer</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        /* 6 Spalten: 1x Zeit, 4x Montag, 1x Button-Spalte */
-        .grid { display: grid; grid-template-columns: 150px repeat(4, 1fr) 100px; gap: 5px; max-width: 1000px; margin: auto; }
+        /* 1 Spalte für Zeit (150px) + 5 gleiche Spalten für Montag und Button */
+        .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
         .box { border: 1px solid #333; padding: 10px; background: #262626; cursor: pointer; min-height: 55px; position: relative; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; justify-content: flex-start; align-items: flex-start; padding-left: 15px; }
         
-        /* Montag spannt über 4 Felder */
+        /* Montag spannt über 4 Spalten */
         .header-tag { background: #444 !important; color: #fff; font-weight: bold; grid-column: span 4; font-size: 1.5em; padding: 15px; }
         
-        /* Button-Zelle */
-        .btn-cell { background: #262626; border: none; display: flex; align-items: center; justify-content: center; }
+        /* Button-Zelle: gleiche Farbe wie Montag-Header */
+        .btn-cell { background: #444 !important; border: none; display: flex; align-items: center; justify-content: center; }
         .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
         
         /* Hallen-Farben */
