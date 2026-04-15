@@ -1,20 +1,74 @@
-<script>
-  // Deine URL ist korrekt hinterlegt
-  fetch("https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec")
-    .then(r => r.json())
-    .then(data => {
-      const container = document.getElementById('plan');
-      // Wir starten bei 1, um die Kopfzeile (A1, B1 etc.) im Sheet zu überspringen
-      for(let i = 1; i < data.length; i++) {
-        let row = data[i];
-        // Spalte A (Lektion)
-        container.innerHTML += `<div class="box"><b>${row[0]}</b></div>`;
-        // Spalten B bis F (Klassen)
-        for(let j = 1; j <= 5; j++) {
-          let status = row[j] || "frei"; // Falls Zelle leer, schreibe "frei"
-          let isReserved = status.toLowerCase().includes("reserviert");
-          container.innerHTML += `<div class="box ${isReserved ? 'reserviert' : ''}">${status}</div>`;
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Sportplaner Wandtafel</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        h2 { text-align: center; color: #333; }
+        
+        /* Das Grid sorgt für das Raster-Layout */
+        .grid { 
+            display: grid; 
+            grid-template-columns: 120px repeat(5, 1fr); 
+            gap: 10px; 
+            max-width: 1000px; 
+            margin: 20px auto; 
         }
-      }
-    });
-</script>
+        
+        .box { 
+            border: 1px solid #ccc; 
+            padding: 15px; 
+            text-align: center; 
+            border-radius: 6px; 
+            background: white; 
+            font-size: 14px;
+        }
+        
+        .header { font-weight: bold; background: #2c3e50; color: white; }
+        .reserviert { background: #e74c3c; color: white; font-weight: bold; border-color: #c0392b; }
+        .frei { color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <h2>SPORTPLANER - WANDTAFEL</h2>
+
+    <div class="grid" id="plan">
+        <div class="box header">Lektion</div>
+        <div class="box header">7a</div>
+        <div class="box header">7b</div>
+        <div class="box header">7c</div>
+        <div class="box header">7d</div>
+        <div class="box header">7e</div>
+    </div>
+
+    <script>
+        // Deine URL zum Google Sheet
+        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('plan');
+                
+                // Wir starten bei Index 1, um die Kopfzeile im Sheet zu überspringen
+                for(let i = 1; i < data.length; i++) {
+                    let row = data[i];
+                    
+                    // Lektion in die erste Box
+                    container.innerHTML += `<div class="box header">${row[0]}</div>`;
+                    
+                    // Klassen-Status (Spalten B bis F -> Index 1 bis 5)
+                    for(let j = 1; j <= 5; j++) {
+                        let status = row[j] || "frei";
+                        let cssKlasse = status.toLowerCase().includes("reserviert") ? "box reserviert" : "box frei";
+                        container.innerHTML += `<div class="${cssKlasse}">${status}</div>`;
+                    }
+                }
+            })
+            .catch(err => console.error("Fehler beim Laden: ", err));
+    </script>
+
+</body>
+</html>
