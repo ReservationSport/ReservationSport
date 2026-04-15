@@ -5,23 +5,23 @@
     <title>Stundenplan Journal</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .main-container { max-width: 1000px; margin: auto; }
         
-        /* Header-Bereich (Datum + Button) */
-        .header-bar { display: grid; grid-template-columns: 1fr 200px 1fr; gap: 10px; margin-bottom: 10px; align-items: center; }
+        /* Das EINE Grid für die gesamte App */
+        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         
-        /* Das Grid */
-        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; }
+        /* Header Bereich (Datum + Speichern) - Spannt über 6 Spalten */
+        .header-top { grid-column: 1 / span 6; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; margin-bottom: 5px; align-items: center; }
+        
+        /* Boxen allgemein */
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .zeit-box { background: #333; font-weight: bold; }
         
-        /* Speichern Button */
+        .klasse { font-weight: bold; font-size: 11px; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
+        
         #saveBtn { background: #333; color: #666; border: 1px solid #444; padding: 8px 20px; font-weight: bold; cursor: not-allowed; }
         #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
         
-        /* Klassen-Design */
-        .klasse { font-weight: bold; font-size: 11px; }
-        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         .bg-red { background: #e74c3c !important; }
         .bg-blue { background: #3498db !important; }
         .bg-purple { background: #9b59b6 !important; }
@@ -32,22 +32,21 @@
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="header-bar">
+    <div class="grid">
+        <div class="header-top">
             <input type="date" id="datePicker" style="padding: 8px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
-            <div id="headerTitle" style="font-weight: bold; text-align: center;">WIRD GELADEN...</div>
+            <div id="headerTitle" style="font-weight: bold; font-size: 1.2rem; letter-spacing: 1px;">WIRD GELADEN...</div>
             <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         </div>
 
-        <div class="grid">
-            <div class="box zeit-box">Zeit</div>
-            <div class="box zeit-box">1</div>
-            <div class="box zeit-box">2</div>
-            <div class="box zeit-box">3</div>
-            <div class="box zeit-box">4</div>
-            <div class="box zeit-box">5</div>
-            <div id="planContent" style="display: contents;"></div>
-        </div>
+        <div class="box zeit-box">Zeit</div>
+        <div class="box zeit-box">1</div>
+        <div class="box zeit-box">2</div>
+        <div class="box zeit-box">3</div>
+        <div class="box zeit-box">4</div>
+        <div class="box zeit-box">5</div>
+        
+        <div id="planContent" style="display: contents;"></div>
     </div>
 
     <script>
@@ -115,8 +114,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const dp = document.getElementById('datePicker');
-            const heute = new Date();
-            dp.value = new Date(heute.getTime() - (heute.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            dp.value = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             dp.addEventListener('change', loadPlan);
             loadPlan();
         });
