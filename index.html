@@ -9,30 +9,30 @@
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
         .besetzt { background: #007bff; color: white; }
-        select { width: 100%; background: #444; color: white; border: none; }
+        select { width: 100%; padding: 5px; background: #444; color: white; border: none; }
     </style>
 </head>
 <body>
     <h2 style="text-align:center;">SPORT PLANER</h2>
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
-        <div class="box header">Klasse 1</div><div class="box header">Klasse 2</div>
-        <div class="box header">Klasse 3</div><div class="box header">Klasse 4</div>
-        <div class="box header">Klasse 5</div>
+        <div class="box header"></div><div class="box header"></div>
+        <div class="box header"></div><div class="box header"></div>
+        <div class="box header"></div>
     </div>
 
     <script>
-        const url = "DEINE_URL_HIER_EINTRAGEN";
+        const url = "HIER_DEINE_URL_EINTRAGEN";
 
         fetch(url).then(r => r.json()).then(data => {
             const container = document.getElementById('plan');
             data.forEach((row, i) => {
-                if(i === 0) return; // Überspringe Header-Zeile
+                if(i === 0) return; 
                 container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
                 for(let j = 1; j <= 5; j++) {
                     let val = row[j] || "";
                     container.innerHTML += `
-                        <div class="box ${val ? 'besetzt' : ''}" onclick="this.querySelector('select').style.display='block'; this.querySelector('span').style.display='none';">
+                        <div class="box ${val ? 'besetzt' : ''}" onclick="this.querySelector('span').style.display='none'; this.querySelector('select').style.display='block';">
                             <span>${val}</span>
                             <select style="display:none" onchange="saveData(${i}, ${j}, this.value)">
                                 <option value="">frei</option>
@@ -50,8 +50,9 @@
         function saveData(row, col, val) {
             fetch(url, {
                 method: "POST",
-                body: JSON.stringify({row, col, val})
-            }).then(() => location.reload());
+                body: JSON.stringify({row, col, val}),
+                mode: "no-cors" // Wichtig, um CORS-Fehler zu vermeiden
+            }).then(() => alert("Gespeichert! Seite neu laden."));
         }
     </script>
 </body>
