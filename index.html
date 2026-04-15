@@ -1,16 +1,20 @@
-<div class="grid" id="sportplan"></div>
-
 <script>
-  // Hier deine Web-App-URL aus dem Google Apps Script einfügen
-  const url = https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec;
-
-  fetch(url)
-    .then(response => response.json())
+  // Deine URL ist korrekt hinterlegt
+  fetch("https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec")
+    .then(r => r.json())
     .then(data => {
-      const container = document.getElementById('sportplan');
-      data.forEach(row => {
-        // Hier bauen wir aus den Zeilen deine Kacheln
-        container.innerHTML += `<div class="box">${row[0]} - ${row[1]}</div>`;
-      });
+      const container = document.getElementById('plan');
+      // Wir starten bei 1, um die Kopfzeile (A1, B1 etc.) im Sheet zu überspringen
+      for(let i = 1; i < data.length; i++) {
+        let row = data[i];
+        // Spalte A (Lektion)
+        container.innerHTML += `<div class="box"><b>${row[0]}</b></div>`;
+        // Spalten B bis F (Klassen)
+        for(let j = 1; j <= 5; j++) {
+          let status = row[j] || "frei"; // Falls Zelle leer, schreibe "frei"
+          let isReserved = status.toLowerCase().includes("reserviert");
+          container.innerHTML += `<div class="box ${isReserved ? 'reserviert' : ''}">${status}</div>`;
+        }
+      }
     });
 </script>
