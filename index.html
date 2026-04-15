@@ -2,19 +2,23 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <title>Sport Planer</title>
     <style>
-     /* ... restliches CSS bleibt gleich ... */
-    .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 40px; }
-    
-    /* Neues Layout für das Feld */
-    .klasse { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px; }
-    .status { font-size: 0.8em; color: #aaa; font-style: italic; display: block; }
-    .besetzt { background: #007bff; color: white; }
-    .besetzt .status { color: #fff; font-weight: bold; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 45px; }
+        .header { background: #444; font-weight: bold; cursor: default; }
+        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
+        .besetzt { background: #007bff; color: white; }
+        .klasse { font-weight: bold; display: block; font-size: 0.9em; }
+        .status { font-size: 0.8em; color: #aaa; font-style: italic; display: block; }
+        .besetzt .status { color: #fff; }
+        select { width: 100%; padding: 5px; background: #444; color: white; border: none; }
     </style>
 </head>
 <body>
-    <h2 style="text-align:center;">SPORT PLANER</h2>
+
+    <h2 style="text-align:center; color: #007bff;">SPORT PLANER</h2>
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
         <div class="box header"></div><div class="box header"></div>
@@ -23,37 +27,51 @@
     </div>
 
     <script>
-        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
+        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec"; // <-- HIER DEINE ECHTE URL REINKOPIEREN!
 
-        fetch(url).then(r => r.json()).then(data => {
-            const container = document.getElementById('plan');
-            data.forEach((row, i) => {
-                if(i === 0) return; 
-                container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
-                for(let j = 1; j <= 5; j++) {
-                    let val = row[j] || "";
-                    container.innerHTML += `
-                        <div class="box ${val ? 'besetzt' : ''}" onclick="this.querySelector('span').style.display='none'; this.querySelector('select').style.display='block';">
-                            <span>${val}</span>
-                            <select style="display:none" onchange="saveData(${i}, ${j}, this.value)">
-                                <option value="">frei</option>
-                                <option value="Halle 1">Halle 1</option>
-                                <option value="Halle 2">Halle 2</option>
-                                <option value="Halle 3">Halle 3</option>
-                                <option value="Halle 4">Halle 4</option>
-                                <option value="U21">U21</option>
-                            </select>
-                        </div>`;
-                }
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('plan');
+                data.forEach((row, i) => {
+                    if(i === 0) return; 
+                    container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
+                    for(let j = 1; j <= 5; j++) {
+                        let val = row[j] || "";
+                        let parts = val.split("|");
+                        let klasseName = parts[0].trim();
+                        let statusName = (parts[1] || "").trim();
+
+                        container.innerHTML += `
+                            <div class="box ${statusName ? 'besetzt' : ''}" onclick="this.querySelector('.status').style.display='none'; this.querySelector('select').style.display='block';">
+                                <span class="klasse">${klasseName}</span>
+                                <span class="status">${statusName || "frei"}</span>
+                                <select style="display:none" data-klasse="${klasseName}" onchange="saveWithClass(this, ${i}, ${j})">
+                                    <option value="">frei</option>
+                                    <option value="Halle 1">Halle 1</option>
+                                    <option value="Halle 2">Halle 2</option>
+                                    <option value="Halle 3">Halle 3</option>
+                                    <option value="Halle 4">Halle 4</option>
+                                    <option value="U21">U21</option>
+                                </select>
+                            </div>`;
+                    }
+                });
             });
-        });
+
+        function saveWithClass(selectEl, i, j) {
+            let klasse = selectEl.getAttribute('data-klasse');
+            let status = selectEl.value;
+            let finalValue = status ? (klasse + " | " + status) : klasse;
+            saveData(i, j, finalValue);
+        }
 
         function saveData(row, col, val) {
             fetch(url, {
                 method: "POST",
                 body: JSON.stringify({row, col, val}),
-                mode: "no-cors" // Wichtig, um CORS-Fehler zu vermeiden
-            }).then(() => alert("Gespeichert! Seite neu laden."));
+                mode: "no-cors"
+            }).then(() => location.reload());
         }
     </script>
 </body>
