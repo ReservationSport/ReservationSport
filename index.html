@@ -5,89 +5,140 @@
     <title>Stundenplan Journal</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .wrapper { max-width: 1000px; margin: auto; }
-        
-        .top-bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; align-items: center; }
-        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; width: 100%; box-sizing: border-box; }
-        #saveBtn { padding: 10px; background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; width: 100%; }
-        #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
-        
-        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; }
-        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
-        .header-box { background: #333; font-weight: bold; }
-        
-        /* Dieser Bereich ist NUR für die Daten gedacht */
-        #dataArea { display: contents; } 
-        
-        .trennlinie { grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 4px 0; }
-        .klasse { font-weight: bold; }
-        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
-        select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
-        
-        .bg-red { background: #c0392b !important; }
-        .bg-blue { background: #2980b9 !important; }
-        .bg-purple { background: #8e44ad !important; }
+        .header-grid { display: grid; grid-template-columns: 120px 1fr 120px; gap: 2px; max-width: 1000px; margin: auto; margin-bottom: 2px; }
+        .header-item { background: #333; padding: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #444; }
+        .header-center { font-size: 1.5rem; letter-spacing: 2px; }
+        #saveBtn { background: #333; color: #666; border: 1px solid #444; padding: 10px; width: 100%; height: 100%; font-weight: bold; cursor: not-allowed; transition: 0.3s; }
+        #saveBtn.active { background: #27ae60; color: white; cursor: pointer; border-color: #2ecc71; }
+        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 60px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
+        .zeit-box { background: #333; font-weight: bold; }
+        .klasse { font-weight: bold; font-size: 12px; }
+        .res { font-style: italic; font-size: 10px; margin-top: 3px; }
+        .bg-red { background: #e74c3c !important; }
+        .bg-blue { background: #3498db !important; }
+        .bg-purple { background: #9b59b6 !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
+        .loader { border: 3px solid #444; border-top: 3px solid #27ae60; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
+        .trennlinie { grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 4px 0; }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="top-bar">
-            <input type="date" id="datePicker">
-            <div id="headerTitle" style="text-align: center; font-weight: bold; font-size: 1.2rem;">Lade Daten...</div>
-            <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
-        </div>
+    <div style="text-align: center; margin-bottom: 10px;">
+        <input type="date" id="datePicker" style="padding: 8px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
+        <div id="loader" class="loader" style="display: inline-block; vertical-align: middle; margin-left: 10px;"></div>
+    </div>
 
-        <div class="grid" id="plan">
-            <div class="box header-box">Zeit</div>
-            <div class="box header-box">1</div>
-            <div class="box header-box">2</div>
-            <div class="box header-box">3</div>
-            <div class="box header-box">4</div>
-            <div class="box header-box">5</div>
-            
-            <div id="dataArea"></div>
+    <div class="header-grid">
+        <div class="header-item">Zeit</div>
+        <div class="header-item header-center" id="headerTitle">WIRD GELADEN...</div>
+        <div class="header-item" style="padding: 0;">
+            <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         </div>
     </div>
 
+    <div class="grid" id="plan"></div>
+
     <script>
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
-        
-        async function loadPlan() {
-            const dateVal = document.getElementById('datePicker').value;
-            const res = await fetch(`${url}?date=${dateVal}`);
-            const data = await res.json();
-            
-            // Nur dataArea leeren, der Rest bleibt stehen!
-            const dataArea = document.getElementById('dataArea');
-            dataArea.innerHTML = ""; 
-            
-            data.forEach((row, rowIndex) => {
-                if (rowIndex === 6) dataArea.innerHTML += `<div class="trennlinie"></div>`;
-                dataArea.innerHTML += `<div class="box header-box">${row[0]}</div>`;
-                for(let i = 1; i <= 5; i++) {
-                    let val = row[i] || "";
-                    let [kl, res] = val.includes(' | ') ? val.split(' | ') : [val, ""];
-                    let color = res?.includes("Halle 1") ? "bg-red" : res?.includes("Halle 4") ? "bg-blue" : res?.includes("U21") ? "bg-purple" : res?.includes("Halle 2") ? "bg-yellow" : "";
-                    dataArea.innerHTML += `
-                        <div class="box ${color}" onclick="this.querySelector('select').style.opacity='1'">
-                            <div class="klasse">${kl || ""}</div>
-                            <div class="res">${res || ""}</div>
-                            <select onchange="addChange(this, '${row[0]}', ${i}, '${kl || ""}')">
-                                <option value="">---</option>
-                                ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
-                            </select>
-                        </div>`;
-                }
-            });
+        let pendingChanges = [];
+
+        function getFarbe(res) {
+            if (res.includes("Halle 1")) return "bg-red";
+            if (res.includes("Halle 4")) return "bg-blue";
+            if (res.includes("U21")) return "bg-purple";
+            if (res.includes("Halle 2")) return "bg-yellow";
+            return "";
         }
-        
+
+        async function loadPlan() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'inline-block';
+            
+            const dateVal = document.getElementById('datePicker').value;
+            const dateObj = new Date(dateVal);
+            
+            // Header sofort aktualisieren
+            const tage = ["SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"];
+            document.getElementById('headerTitle').innerText = `${tage[dateObj.getDay()]} - ${dateObj.toLocaleDateString('de-DE')}`;
+
+            try {
+                const res = await fetch(`${url}?date=${dateVal}`);
+                const data = await res.json();
+                
+                const container = document.getElementById('plan');
+                container.innerHTML = "";
+                pendingChanges = [];
+                updateSaveBtn();
+                
+                data.forEach((row, rowIndex) => {
+                    if (rowIndex === 6) container.innerHTML += `<div class="trennlinie"></div>`;
+                    container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                    for(let i = 1; i <= 5; i++) {
+                        let val = row[i] || "";
+                        let [klasse, reservierung] = val.includes(' | ') ? val.split(' | ') : [val, ""];
+                        container.innerHTML += `
+                            <div class="box ${getFarbe(reservierung)}" onclick="this.querySelector('select').style.opacity='1'">
+                                <div class="klasse">${klasse}</div>
+                                <div class="res">${reservierung}</div>
+                                <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
+                                    <option value="">---</option>
+                                    ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
+                                </select>
+                            </div>`;
+                    }
+                });
+            } catch (e) {
+                console.error("Ladefehler:", e);
+            }
+            loader.style.display = 'none';
+        }
+
+        function addChange(el, time, slotIndex, klasse) {
+            let res = el.value;
+            let anzeigeRes = (res === "" || res === "---") ? "" : res;
+            let speicherWert = anzeigeRes === "" ? klasse : klasse + " | " + res;
+            el.parentElement.querySelector('.res').innerText = anzeigeRes;
+            el.parentElement.className = `box ${getFarbe(anzeigeRes)}`;
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
+            updateSaveBtn();
+            el.style.opacity = '0';
+        }
+
+        function updateSaveBtn() {
+            const btn = document.getElementById('saveBtn');
+            if(pendingChanges.length > 0) {
+                btn.className = "active";
+                btn.disabled = false;
+            } else {
+                btn.className = "";
+                btn.disabled = true;
+            }
+        }
+
+        async function saveChanges() {
+            document.getElementById('loader').style.display = 'inline-block';
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
+            pendingChanges = [];
+            updateSaveBtn();
+            loadPlan();
+        }
+
+        // Initialisierung beim Laden der Seite
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('datePicker').value = new Date().toISOString().split('T')[0];
-            document.getElementById('datePicker').addEventListener('change', loadPlan);
+            const dp = document.getElementById('datePicker');
+            
+            // Setzt das Datum auf HEUTE (unter Berücksichtigung der lokalen Zeitzone)
+            const heute = new Date();
+            const offset = heute.getTimezoneOffset() * 60000;
+            const lokaleZeit = new Date(heute - offset);
+            dp.value = lokaleZeit.toISOString().split('T')[0];
+            
+            dp.addEventListener('change', loadPlan);
             loadPlan();
         });
-        // addChange und saveChanges bleiben wie gewohnt
     </script>
 </body>
 </html>
