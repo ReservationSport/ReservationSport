@@ -2,139 +2,71 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Sport Planer</title>
+    <title>Sport Planer Pro</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        
-        .box { 
-            border: 1px solid #333; padding: 5px; background: #262626; cursor: pointer; min-height: 55px; 
-            position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; 
-        }
-        
-        /* Trennlinie-Stil */
-        .separator { 
-            grid-column: span 6; 
-            height: 10px; 
-            background: #007bff; 
-            margin: 5px 0;
-            border-radius: 2px;
-        }
-
-        select { 
-            width: 100%; height: 100%; position: absolute; top: 0; left: 0; 
-            opacity: 0; cursor: pointer; background: #2c3e50 !important; color: #fff; 
-            border: 3px solid #3498db !important; z-index: 10; font-size: 1.1em; font-weight: bold;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-        }
-
-        .zeit { background: #333; border-right: 2px solid #555; font-weight: bold; }
-        .header { background: #444; font-weight: bold; }
-        .header-tag { background: #444 !important; grid-column: span 4; font-size: 1.5em; display: flex; justify-content: center; align-items: center; }
-        
-        .btn-cell { background: #444 !important; display: flex; align-items: center; justify-content: center; }
-        .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: not-allowed; background: #555; color: #aaa; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
-        .save-btn.active { background: #27ae60; color: white; cursor: pointer; }
-        
-        .halle1 { background-color: #e74c3c !important; }
-        .halle2 { background-color: #f1c40f !important; color: black !important; }
-        .halle3 { background-color: #2ecc71 !important; }
-        .halle4 { background-color: #3498db !important; }
-        .u21    { background-color: #9b59b6 !important; }
-        
-        .klasse { font-weight: bold; font-size: 0.9em; z-index: 1; pointer-events: none; }
-        .status { font-size: 0.8em; color: #fff; font-style: italic; z-index: 1; pointer-events: none; }
+        .nav { text-align: center; margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
+        .grid { display: grid; grid-template-columns: 100px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #333; padding: 5px; background: #262626; min-height: 50px; position: relative; display: flex; align-items: center; justify-content: center; }
+        select { width: 100%; height: 100%; position: absolute; opacity: 0; cursor: pointer; }
+        .save-btn { padding: 10px 20px; background: #27ae60; border: none; color: white; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="grid" id="plan">
-        <div class="box header">Zeit</div>
-        <div class="box header-tag">MONTAG</div>
-        <div class="box btn-cell">
-            <button id="saveBtn" class="save-btn" onclick="saveAllChanges()" disabled>Speichern</button>
-        </div>
+    <div class="nav">
+        <input type="date" id="datePicker" onchange="loadPlan()">
+        <button onclick="saveAllChanges()" class="save-btn">Speichern</button>
     </div>
 
+    <div class="grid" id="plan"></div>
+
     <script>
+        // Deine URL wurde hier eingefügt
         const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
         let pendingChanges = [];
 
-        function closeAllMenus() {
-            document.querySelectorAll('select').forEach(sel => sel.style.opacity = '0');
-            document.querySelectorAll('.status').forEach(st => st.style.display = 'block');
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('select')) closeAllMenus();
-        });
-
-        function getColorClass(status) {
-            const classes = { "Halle 1": "halle1", "Halle 2": "halle2", "Halle 3": "halle3", "Halle 4": "halle4", "U21": "u21" };
-            return classes[status] || "";
-        }
-
-        fetch(url).then(r => r.json()).then(data => {
+        async function loadPlan() {
+            const date = document.getElementById('datePicker').value;
+            const res = await fetch(`${url}?date=${date}`);
+            const data = await res.json();
             const container = document.getElementById('plan');
-            data.forEach((row, i) => {
-                if(i === 0) return; 
-                
-                // Trennlinie nach Lektion 6 (Index 6, da Index 0 Header ist)
-                if(i === 7) {
-                    container.innerHTML += `<div class="separator"></div>`;
-                }
+            container.innerHTML = "";
 
-                container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
-                for(let j = 1; j <= 5; j++) {
-                    let val = row[j] || "";
-                    let parts = val.split("|");
-                    let klasseName = parts[0].trim();
-                    let statusName = (parts[1] || "").trim();
-                    let cClass = getColorClass(statusName);
-
+            data.forEach((row) => {
+                // Zeit wird aus der Spalte 1 (Index 1) genommen
+                let time = row[1]; 
+                container.innerHTML += `<div class="box">${time}</div>`;
+                // Slots (Spalten C-G, also Index 2-6)
+                for(let i = 2; i <= 6; i++) {
                     container.innerHTML += `
-                        <div class="box ${statusName ? 'besetzt ' + cClass : ''}" 
-                             onclick="event.stopPropagation(); closeAllMenus(); this.querySelector('select').style.opacity='1'; this.querySelector('.status').style.display='none';">
-                            <span class="klasse">${klasseName}</span>
-                            <span class="status">${statusName}</span>
-                            <select data-klasse="${klasseName}" onchange="updateView(this, ${i}, ${j})">
+                        <div class="box" onclick="this.querySelector('select').style.opacity='1'">
+                            ${row[i] || ""}
+                            <select onchange="addChange(this, '${date}', '${time}', ${i})">
                                 <option value="">---</option>
-                                <option value="Halle 1" ${statusName==='Halle 1'?'selected':''}>Halle 1</option>
-                                <option value="Halle 2" ${statusName==='Halle 2'?'selected':''}>Halle 2</option>
-                                <option value="Halle 3" ${statusName==='Halle 3'?'selected':''}>Halle 3</option>
-                                <option value="Halle 4" ${statusName==='Halle 4'?'selected':''}>Halle 4</option>
-                                <option value="U21" ${statusName==='U21'?'selected':''}>U21</option>
+                                <option value="Klasse 1">Klasse 1</option>
+                                <option value="Klasse 2">Klasse 2</option>
                             </select>
                         </div>`;
                 }
             });
-        });
+        }
 
-        function updateView(selectEl, row, col) {
-            let box = selectEl.parentElement;
-            let klasse = selectEl.getAttribute('data-klasse');
-            let status = selectEl.value;
-            let finalVal = status ? (klasse + " | " + status) : klasse;
-
-            box.className = 'box'; 
-            if(status) box.className += ' besetzt ' + getColorClass(status);
-            
-            box.querySelector('.status').innerText = status;
-            box.querySelector('.status').style.display = 'block';
-            selectEl.style.opacity = '0';
-
-            pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
-            pendingChanges.push({ row, col, val: finalVal });
-
-            const btn = document.getElementById('saveBtn');
-            btn.classList.add('active');
-            btn.disabled = false;
+        function addChange(el, date, time, slotIndex) {
+            pendingChanges.push({ date, time, slotIndex, val: el.value });
+            el.parentElement.childNodes[0].textContent = el.value;
         }
 
         async function saveAllChanges() {
-            if (pendingChanges.length === 0) return;
-            document.getElementById('saveBtn').innerText = "Speichere...";
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
-            location
+            alert("Erfolgreich gespeichert!");
+            location.reload();
+        }
+
+        document.getElementById('datePicker').valueAsDate = new Date();
+        loadPlan();
+    </script>
+</body>
+</html>
