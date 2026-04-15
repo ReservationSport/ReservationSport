@@ -4,21 +4,27 @@
     <meta charset="UTF-8">
     <title>Stundenplan Journal</title>
     <style>
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #27ae60; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Dunkles, elegantes Design */
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
-        .zeit-box { background: #333; font-weight: bold; }
-        .klasse { font-weight: bold; margin-bottom: 2px; }
-        .res { color: #27ae60; font-size: 10px; font-weight: bold; } /* Hier steht die Reservierung */
+        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
+        .zeit-box { background: #333; font-weight: bold; cursor: default; }
+        
+        /* Klassen- und Reservierungs-Design */
+        .klasse { font-weight: bold; color: #ffffff; }
+        .res { color: #27ae60; font-size: 10px; font-weight: bold; margin-top: 2px; }
+        
+        /* Spinner-Design */
+        .loader { border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
     </style>
 </head>
 <body>
     <div style="text-align: center; margin-bottom: 20px;">
-        <input type="date" id="datePicker" onchange="loadPlan()">
-        <button onclick="saveChanges()">Speichern</button>
+        <input type="date" id="datePicker" onchange="loadPlan()" style="padding: 10px; background: #333; color: white; border: 1px solid #444;">
+        <button onclick="saveChanges()" style="padding: 10px 20px; background: #27ae60; border: none; color: white; cursor: pointer; font-weight: bold;">Speichern</button>
         <div id="loader" class="loader"></div>
     </div>
     <div class="grid" id="plan"></div>
@@ -60,10 +66,9 @@
 
         function addChange(el, time, slotIndex, klasse) {
             let res = el.value;
-            let anzeigeText = (res === "" || res === "---") ? "" : res;
+            let displayRes = (res === "" || res === "---") ? "" : res;
             
-            el.parentElement.querySelector('.res').innerText = anzeigeText;
-            // Wir speichern im Sheet wieder als "Klasse | Reservierung", damit es beim nächsten Laden wieder getrennt werden kann
+            el.parentElement.querySelector('.res').innerText = displayRes;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
             
             pendingChanges.push({ time, slotIndex, val: speicherWert });
