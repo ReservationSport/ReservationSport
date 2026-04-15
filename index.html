@@ -9,8 +9,8 @@
 
         /* HEADER: Datum und Button */
         .top-bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; align-items: center; }
-        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; }
-        #saveBtn { padding: 10px; background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; width: 100%; box-sizing: border-box; }
+        #saveBtn { padding: 10px; background: #333; color: #666; border: 1px solid #444; font-weight: bold; cursor: not-allowed; width: 100%; }
         #saveBtn.active { background: #27ae60; color: white; cursor: pointer; }
 
         /* GRID: Zeit-Spalte + 5 Klassen-Spalten */
@@ -56,9 +56,8 @@
             const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
             
-            // Grid leeren, aber die Header-Boxen behalten!
-            const grid = document.getElementById('plan');
-            grid.innerHTML = `
+            // Feste Kopfzeile definieren
+            const headerHTML = `
                 <div class="box header-box">Zeit</div>
                 <div class="box header-box">1</div>
                 <div class="box header-box">2</div>
@@ -66,13 +65,16 @@
                 <div class="box header-box">4</div>
                 <div class="box header-box">5</div>
             `;
+            
+            const grid = document.getElementById('plan');
+            grid.innerHTML = headerHTML; // Nur Header überschreiben
 
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 6) grid.innerHTML += `<div class="trennlinie"></div>`;
                 grid.innerHTML += `<div class="box header-box">${row[0]}</div>`;
                 for(let i = 1; i <= 5; i++) {
                     let val = row[i] || "";
-                    let [kl, res] = val.split(' | ');
+                    let [kl, res] = val.includes(' | ') ? val.split(' | ') : [val, ""];
                     let color = res?.includes("Halle 1") ? "bg-red" : res?.includes("Halle 4") ? "bg-blue" : res?.includes("U21") ? "bg-purple" : res?.includes("Halle 2") ? "bg-yellow" : "";
                     grid.innerHTML += `
                         <div class="box ${color}" onclick="this.querySelector('select').style.opacity='1'">
@@ -86,8 +88,7 @@
                 }
             });
         }
-        
-        // ... (addChange, saveChanges, Initialisierung wie gehabt) ...
+        // ... addChange, saveChanges & EventListener bleiben wie gehabt ...
     </script>
 </body>
 </html>
