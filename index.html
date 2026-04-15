@@ -3,23 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 150px repeat(4, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 15px; text-align: center; background: #262626; }
+        body { font-family: sans-serif; background: #1a1a1a; color: #ffffff; padding: 20px; }
+        
+        .grid { 
+            display: grid; 
+            /* 150px für die Zeit + 5 gleiche Spalten für Klassen */
+            grid-template-columns: 150px repeat(5, 1fr); 
+            gap: 5px; 
+            max-width: 1000px; 
+            margin: auto; 
+        }
+        
+        .box { 
+            border: 1px solid #333; 
+            padding: 15px; 
+            text-align: center; 
+            background: #262626; 
+        }
+        
         .header { background: #444; font-weight: bold; }
-        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; }
+        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
+        
+        /* Wenn ein Feld besetzt ist, wird es blau markiert */
         .besetzt { background: #007bff; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align:center;">SPORT PLANER</h2>
+    <h2 style="text-align:center; color: #007bff;">SPORT PLANER</h2>
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
-        <div class="box header"></div>
-        <div class="box header"></div>
-        <div class="box header"></div>
-        <div class="box header"></div>
+        <div class="box header">1</div>
+        <div class="box header">2</div>
+        <div class="box header">3</div>
+        <div class="box header">4</div>
+        <div class="box header">5</div>
     </div>
 
     <script>
@@ -29,11 +47,11 @@
             .then(r => r.json())
             .then(data => {
                 const container = document.getElementById('plan');
-                // Daten anzeigen
                 for(let i = 1; i < data.length; i++) {
                     let row = data[i];
                     container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
-                    for(let j = 1; j <= 4; j++) {
+                    // Schleife läuft jetzt bis 5
+                    for(let j = 1; j <= 5; j++) {
                         let inhalt = row[j] || "";
                         let klasse = inhalt !== "" ? "besetzt" : "";
                         container.innerHTML += `<div class="box ${klasse}">${inhalt}</div>`;
