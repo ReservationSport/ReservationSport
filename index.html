@@ -5,26 +5,27 @@
     <title>Sport Planer Pro</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .nav { text-align: center; margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
-        .grid { display: grid; grid-template-columns: 100px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 5px; background: #262626; min-height: 50px; position: relative; display: flex; align-items: center; justify-content: center; }
-        select { width: 100%; height: 100%; position: absolute; opacity: 0; cursor: pointer; }
-        .save-btn { padding: 10px 20px; background: #27ae60; border: none; color: white; cursor: pointer; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: 80px repeat(5, 1fr); gap: 2px; max-width: 1200px; margin: auto; }
+        .box { border: 1px solid #444; padding: 8px; background: #262626; font-size: 12px; min-height: 40px; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .zeit-box { background: #333; font-weight: bold; }
+        select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="nav">
-        <input type="date" id="datePicker" onchange="loadPlan()">
-        <button onclick="saveAllChanges()" class="save-btn">Speichern</button>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <input type="date" id="datePicker" onchange="loadPlan()" style="padding: 10px;">
+        <button onclick="saveAllChanges()" style="padding: 10px 20px; background: #27ae60; border: none; color: white; cursor: pointer;">Speichern</button>
     </div>
 
     <div class="grid" id="plan"></div>
 
     <script>
-        // Deine URL wurde hier eingefügt
         const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
         let pendingChanges = [];
+        
+        // DEINE RESERVIERUNGSMÖGLICHKEITEN
+        const resOptionen = ["---", "Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"];
 
         async function loadPlan() {
             const date = document.getElementById('datePicker').value;
@@ -34,18 +35,17 @@
             container.innerHTML = "";
 
             data.forEach((row) => {
-                // Zeit wird aus der Spalte 1 (Index 1) genommen
-                let time = row[1]; 
-                container.innerHTML += `<div class="box">${time}</div>`;
-                // Slots (Spalten C-G, also Index 2-6)
+                let time = row[1]; // Zeit (Spalte B)
+                container.innerHTML += `<div class="box zeit-box">${time}</div>`;
+                
                 for(let i = 2; i <= 6; i++) {
+                    let currentVal = row[i] || ""; // Inhalt der Zelle (z.B. "U21 | Halle 1")
                     container.innerHTML += `
                         <div class="box" onclick="this.querySelector('select').style.opacity='1'">
-                            ${row[i] || ""}
+                            <span id="display-${i}">${currentVal}</span>
                             <select onchange="addChange(this, '${date}', '${time}', ${i})">
                                 <option value="">---</option>
-                                <option value="Klasse 1">Klasse 1</option>
-                                <option value="Klasse 2">Klasse 2</option>
+                                ${resOptionen.map(r => `<option value="${r}">${r}</option>`).join('')}
                             </select>
                         </div>`;
                 }
@@ -53,16 +53,24 @@
         }
 
         function addChange(el, date, time, slotIndex) {
-            pendingChanges.push({ date, time, slotIndex, val: el.value });
-            el.parentElement.childNodes[0].textContent = el.value;
+            // Hier kombinieren wir: Was war vorher da?
+            let oldValue = el.parentElement.querySelector('span').innerText;
+            // Wir nehmen den Klassennamen, der schon da ist, und hängen die Wahl an
+            let klasse = oldValue.split(' | ')[0] || "Klasse?"; 
+            let newValue = klasse + " | " + el.value;
+            
+            pendingChanges.push({ date, time, slotIndex, val: newValue });
+            el.parentElement.querySelector('span').innerText = newValue;
+            el.style.opacity = '0';
         }
 
         async function saveAllChanges() {
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
-            alert("Erfolgreich gespeichert!");
-            location.reload();
+            pendingChanges = [];
+            alert("Reservierung für heute aktualisiert!");
+            loadPlan();
         }
 
         document.getElementById('datePicker').valueAsDate = new Date();
