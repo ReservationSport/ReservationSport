@@ -6,37 +6,17 @@
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        
-        /* Boxen: Flex-Layout für perfekte Zentrierung */
-        .box { 
-            border: 1px solid #333; 
-            padding: 10px; 
-            background: #262626; 
-            cursor: pointer; 
-            min-height: 55px; 
-            position: relative; 
-            transition: all 0.2s; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; /* Vertikal zentriert */
-            align-items: center;     /* Horizontal zentriert */
-            text-align: center;
-        }
-        
+        .box { border: 1px solid #333; padding: 10px; background: #262626; cursor: pointer; min-height: 55px; position: relative; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; justify-content: flex-start; align-items: flex-start; padding-left: 15px; }
         
-        /* Neuer Header Stil */
+        /* Header-Stil mit integriertem Button */
         .header-tag { 
-            background: #444 !important; 
-            color: #fff; 
-            font-weight: bold; 
-            grid-column: span 5; 
-            font-size: 1.8em; 
-            padding: 20px; 
-            letter-spacing: 2px; 
-            border-bottom: 3px solid #007bff; 
+            background: #444 !important; color: #fff; font-weight: bold; grid-column: span 5; 
+            font-size: 1.5em; padding: 15px; display: flex; justify-content: space-between; align-items: center;
         }
+        
+        .save-btn { padding: 5px 15px; font-size: 0.6em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
         
         /* Hallen-Farben */
         .halle1 { background-color: #e74c3c !important; }
@@ -50,22 +30,20 @@
         .status { font-size: 0.8em; color: #fff; font-style: italic; min-height: 1em; }
         
         select { width: 90%; padding: 5px; background: #444; color: white; border: none; }
-        
-        #controls { text-align: center; margin-bottom: 20px; position: sticky; top: 0; background: #1a1a1a; padding: 10px; z-index: 100; border-bottom: 1px solid #333; }
-        button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; }
-        #status-msg { margin-left: 15px; color: #e67e22; font-weight: bold; }
+        #status-msg { font-size: 0.5em; color: #e67e22; margin-left: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <button onclick="saveAllChanges()">Änderungen jetzt speichern</button>
-        <span id="status-msg">Bereit.</span>
-    </div>
-
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
-        <div class="box header-tag">MONTAG</div>
+        <div class="box header-tag">
+            <span>MONTAG</span>
+            <div>
+                <button class="save-btn" onclick="saveAllChanges()">Speichern</button>
+                <span id="status-msg"></span>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -131,6 +109,7 @@
 
         async function saveAllChanges() {
             if (pendingChanges.length === 0) return;
+            document.getElementById('status-msg').innerText = "Speichere...";
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
