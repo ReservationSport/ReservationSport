@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Sport Planer Interaktiv</title>
+    <title>Sport Planer</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
@@ -11,19 +11,23 @@
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
         
         /* Status-Farben */
-        .besetzt { background: #007bff; color: white; }
-        .geaendert { background: #e67e22 !important; border: 2px solid white; } /* Markierung für ungespeicherte Änderungen */
+        .besetzt { color: white; }
+        .geaendert { border: 2px solid #fff !important; } 
+        
+        .halle1 { background-color: #e74c3c !important; } /* Rot */
+        .halle2 { background-color: #f1c40f !important; color: black !important; } /* Gelb */
+        .halle3 { background-color: #2ecc71 !important; } /* Grün */
+        .halle4 { background-color: #3498db !important; } /* Blau */
+        .u21    { background-color: #9b59b6 !important; } /* Lila */
         
         .klasse { font-weight: bold; display: block; font-size: 0.9em; }
-        .status { font-size: 0.8em; color: #aaa; font-style: italic; display: block; }
+        .status { font-size: 0.8em; color: #ccc; font-style: italic; display: block; }
         .besetzt .status { color: #fff; }
         
         select { width: 100%; padding: 5px; background: #444; color: white; border: none; margin-top: 5px; }
         
-        /* Speicher-Button Bereich */
         #controls { text-align: center; margin-bottom: 20px; position: sticky; top: 0; background: #1a1a1a; padding: 10px; z-index: 100; }
         button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; }
-        button:hover { background: #2ecc71; }
         #status-msg { margin-left: 15px; color: #e67e22; font-weight: bold; }
     </style>
 </head>
@@ -43,7 +47,16 @@
 
     <script>
         const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
-        let pendingChanges = []; // Hier sammeln wir die Änderungen
+        let pendingChanges = [];
+
+        function getColorClass(status) {
+            if (status === "Halle 1") return "halle1";
+            if (status === "Halle 2") return "halle2";
+            if (status === "Halle 3") return "halle3";
+            if (status === "Halle 4") return "halle4";
+            if (status === "U21") return "u21";
+            return "";
+        }
 
         fetch(url)
             .then(r => r.json())
@@ -57,18 +70,19 @@
                         let parts = val.split("|");
                         let klasseName = parts[0].trim();
                         let statusName = (parts[1] || "").trim();
+                        let colorClass = getColorClass(statusName);
 
                         container.innerHTML += `
-                            <div class="box ${statusName ? 'besetzt' : ''}" id="cell-${i}-${j}" onclick="showSelect(this)">
+                            <div class="box ${statusName ? 'besetzt ' + colorClass : ''}" onclick="showSelect(this)">
                                 <span class="klasse">${klasseName}</span>
                                 <span class="status">${statusName || "frei"}</span>
                                 <select style="display:none" data-klasse="${klasseName}" onchange="markAsChanged(this, ${i}, ${j})">
-                                    <option value="" ${statusName===''?'selected':''}>frei</option>
-                                    <option value="Halle 1" ${statusName==='Halle 1'?'selected':''}>Halle 1</option>
-                                    <option value="Halle 2" ${statusName==='Halle 2'?'selected':''}>Halle 2</option>
-                                    <option value="Halle 3" ${statusName==='Halle 3'?'selected':''}>Halle 3</option>
-                                    <option value="Halle 4" ${statusName==='Halle 4'?'selected':''}>Halle 4</option>
-                                    <option value="U21" ${statusName==='U21'?'selected':''}>U21</option>
+                                    <option value="">frei</option>
+                                    <option value="Halle 1">Halle 1</option>
+                                    <option value="Halle 2">Halle 2</option>
+                                    <option value="Halle 3">Halle 3</option>
+                                    <option value="Halle 4">Halle 4</option>
+                                    <option value="U21">U21</option>
                                 </select>
                             </div>`;
                     }
@@ -86,34 +100,24 @@
             let status = selectEl.value;
             let newVal = status ? (klasse + " | " + status) : klasse;
 
-            // Box optisch markieren
-            box.classList.add('geaendert');
+            // Farben anpassen
+            box.className = 'box besetzt ' + getColorClass(status) + ' geaendert';
             box.querySelector('.status').innerText = status || "frei";
             box.querySelector('.status').style.display = 'block';
             selectEl.style.display = 'none';
 
-            // Änderung in Liste speichern (oder alte Änderung überschreiben)
             pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
             pendingChanges.push({ row, col, val: newVal });
-
             document.getElementById('status-msg').innerText = pendingChanges.length + " Änderung(en) ungespeichert!";
         }
 
         async function saveAllChanges() {
             if (pendingChanges.length === 0) return alert("Keine Änderungen vorhanden.");
-            
             document.getElementById('status-msg').innerText = "Speichere...";
-            
-            // Wir senden jede Änderung einzeln (einfachste Lösung für das vorhandene Script)
             for (let change of pendingChanges) {
-                await fetch(url, {
-                    method: "POST",
-                    body: JSON.stringify(change),
-                    mode: "no-cors"
-                });
+                await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
-            
-            alert("Alle Änderungen wurden im Sheet gespeichert!");
+            alert("Erfolgreich gespeichert!");
             location.reload();
         }
     </script>
