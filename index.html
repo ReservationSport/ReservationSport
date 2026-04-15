@@ -2,73 +2,44 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Sportplaner Wandtafel</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
-        h2 { text-align: center; color: #333; }
-        
-        /* Das Grid sorgt für das Raster-Layout */
-        .grid { 
-            display: grid; 
-            grid-template-columns: 120px repeat(5, 1fr); 
-            gap: 10px; 
-            max-width: 1000px; 
-            margin: 20px auto; 
-        }
-        
-        .box { 
-            border: 1px solid #ccc; 
-            padding: 15px; 
-            text-align: center; 
-            border-radius: 6px; 
-            background: white; 
-            font-size: 14px;
-        }
-        
-        .header { font-weight: bold; background: #2c3e50; color: white; }
-        .reserviert { background: #e74c3c; color: white; font-weight: bold; border-color: #c0392b; }
-        .frei { color: #27ae60; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 150px repeat(4, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
+        .box { border: 1px solid #333; padding: 15px; text-align: center; background: #262626; }
+        .header { background: #444; font-weight: bold; }
+        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; }
+        .besetzt { background: #007bff; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>SPORTPLANER - WANDTAFEL</h2>
-
+    <h2 style="text-align:center;">SPORT PLANER</h2>
     <div class="grid" id="plan">
-        <div class="box header">Lektion</div>
-        <div class="box header">7a</div>
-        <div class="box header">7b</div>
-        <div class="box header">7c</div>
-        <div class="box header">7d</div>
-        <div class="box header">7e</div>
+        <div class="box header">Zeit</div>
+        <div class="box header"></div>
+        <div class="box header"></div>
+        <div class="box header"></div>
+        <div class="box header"></div>
     </div>
 
     <script>
-        // Deine URL zum Google Sheet
         const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
 
         fetch(url)
             .then(r => r.json())
             .then(data => {
                 const container = document.getElementById('plan');
-                
-                // Wir starten bei Index 1, um die Kopfzeile im Sheet zu überspringen
+                // Daten anzeigen
                 for(let i = 1; i < data.length; i++) {
                     let row = data[i];
-                    
-                    // Lektion in die erste Box
-                    container.innerHTML += `<div class="box header">${row[0]}</div>`;
-                    
-                    // Klassen-Status (Spalten B bis F -> Index 1 bis 5)
-                    for(let j = 1; j <= 5; j++) {
-                        let status = row[j] || "frei";
-                        let cssKlasse = status.toLowerCase().includes("reserviert") ? "box reserviert" : "box frei";
-                        container.innerHTML += `<div class="${cssKlasse}">${status}</div>`;
+                    container.innerHTML += `<div class="box zeit">${row[0]}</div>`;
+                    for(let j = 1; j <= 4; j++) {
+                        let inhalt = row[j] || "";
+                        let klasse = inhalt !== "" ? "besetzt" : "";
+                        container.innerHTML += `<div class="box ${klasse}">${inhalt}</div>`;
                     }
                 }
-            })
-            .catch(err => console.error("Fehler beim Laden: ", err));
+            });
     </script>
-
 </body>
 </html>
