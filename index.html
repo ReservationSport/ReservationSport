@@ -1,43 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-  body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
-  .grid { 
-    display: grid; 
-    grid-template-columns: 120px repeat(5, 1fr); 
-    gap: 8px; 
-  }
-  .box { border: 1px solid #ddd; padding: 10px; text-align: center; border-radius: 4px; font-size: 14px; }
-  .header { font-weight: bold; background: #333; color: white; }
-  .lektion { font-weight: bold; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
-  .frei { background: #f9f9f9; color: #888; }
-  .reserviert { background: #d1e7dd; border: 1px solid #0f5132; color: #0f5132; font-weight: bold; }
-</style>
-</head>
-<body>
+<div class="grid" id="sportplan"></div>
 
-<h2 style="text-align:center;">SPORT PLANER - WANDTAFEL TAGESANSICHT</h2>
+<script>
+  // Hier deine Web-App-URL aus dem Google Apps Script einfügen
+  const url = https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec;
 
-<div class="grid">
-  <div class="box header">Lektion</div>
-  <div class="box header">Klasse 7a</div>
-  <div class="box header">Klasse 7b</div>
-  <div class="box header">Klasse 7c</div>
-  <div class="box header">Klasse 7d</div>
-  <div class="box header">Klasse 7e</div>
-
-  <script>
-    for(let i=1; i<=12; i++) {
-      document.write('<div class="box lektion">Lektion '+i+'</div>');
-      for(let k=0; k<5; k++) {
-        // Hier simulieren wir mal eine Reservierung in Lektion 1 und 3
-        let status = (i==1 && k==0) || (i==3 && k==2) ? 'reserviert' : 'frei';
-        document.write('<div class="box '+status+'">'+(status=='reserviert' ? 'RESERVIERT' : '(frei)')+'</div>');
-      }
-    }
-  </script>
-</div>
-
-</body>
-</html>
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('sportplan');
+      data.forEach(row => {
+        // Hier bauen wir aus den Zeilen deine Kacheln
+        container.innerHTML += `<div class="box">${row[0]} - ${row[1]}</div>`;
+      });
+    });
+</script>
