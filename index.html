@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 15px; text-align: center; background: #262626; cursor: pointer; min-height: 25px; }
-        .header { background: #444; font-weight: bold; cursor: default; }
-        .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
-        .besetzt { background: #007bff; color: white; }
-        select { width: 100%; padding: 5px; background: #444; color: white; border: none; }
+     /* ... restliches CSS bleibt gleich ... */
+    .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 40px; }
+    
+    /* Neues Layout für das Feld */
+    .klasse { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px; }
+    .status { font-size: 0.8em; color: #aaa; font-style: italic; display: block; }
+    .besetzt { background: #007bff; color: white; }
+    .besetzt .status { color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
