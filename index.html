@@ -2,23 +2,38 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Sport Planer</title>
+    <title>Sport Planer Interaktiv</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
-        .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 45px; }
+        .box { border: 1px solid #333; padding: 10px; text-align: center; background: #262626; cursor: pointer; min-height: 45px; position: relative; }
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; text-align: left; }
+        
+        /* Status-Farben */
         .besetzt { background: #007bff; color: white; }
+        .geaendert { background: #e67e22 !important; border: 2px solid white; } /* Markierung für ungespeicherte Änderungen */
+        
         .klasse { font-weight: bold; display: block; font-size: 0.9em; }
         .status { font-size: 0.8em; color: #aaa; font-style: italic; display: block; }
         .besetzt .status { color: #fff; }
-        select { width: 100%; padding: 5px; background: #444; color: white; border: none; }
+        
+        select { width: 100%; padding: 5px; background: #444; color: white; border: none; margin-top: 5px; }
+        
+        /* Speicher-Button Bereich */
+        #controls { text-align: center; margin-bottom: 20px; position: sticky; top: 0; background: #1a1a1a; padding: 10px; z-index: 100; }
+        button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #2ecc71; }
+        #status-msg { margin-left: 15px; color: #e67e22; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align:center; color: #007bff;">SPORT PLANER</h2>
+    <div id="controls">
+        <button onclick="saveAllChanges()">Änderungen jetzt speichern</button>
+        <span id="status-msg"></span>
+    </div>
+
     <div class="grid" id="plan">
         <div class="box header">Zeit</div>
         <div class="box header"></div><div class="box header"></div>
@@ -27,7 +42,8 @@
     </div>
 
     <script>
-        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec"; // <-- HIER DEINE ECHTE URL REINKOPIEREN!
+        const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
+        let pendingChanges = []; // Hier sammeln wir die Änderungen
 
         fetch(url)
             .then(r => r.json())
@@ -43,35 +59,62 @@
                         let statusName = (parts[1] || "").trim();
 
                         container.innerHTML += `
-                            <div class="box ${statusName ? 'besetzt' : ''}" onclick="this.querySelector('.status').style.display='none'; this.querySelector('select').style.display='block';">
+                            <div class="box ${statusName ? 'besetzt' : ''}" id="cell-${i}-${j}" onclick="showSelect(this)">
                                 <span class="klasse">${klasseName}</span>
                                 <span class="status">${statusName || "frei"}</span>
-                                <select style="display:none" data-klasse="${klasseName}" onchange="saveWithClass(this, ${i}, ${j})">
-                                    <option value="">frei</option>
-                                    <option value="Halle 1">Halle 1</option>
-                                    <option value="Halle 2">Halle 2</option>
-                                    <option value="Halle 3">Halle 3</option>
-                                    <option value="Halle 4">Halle 4</option>
-                                    <option value="U21">U21</option>
+                                <select style="display:none" data-klasse="${klasseName}" onchange="markAsChanged(this, ${i}, ${j})">
+                                    <option value="" ${statusName===''?'selected':''}>frei</option>
+                                    <option value="Halle 1" ${statusName==='Halle 1'?'selected':''}>Halle 1</option>
+                                    <option value="Halle 2" ${statusName==='Halle 2'?'selected':''}>Halle 2</option>
+                                    <option value="Halle 3" ${statusName==='Halle 3'?'selected':''}>Halle 3</option>
+                                    <option value="Halle 4" ${statusName==='Halle 4'?'selected':''}>Halle 4</option>
+                                    <option value="U21" ${statusName==='U21'?'selected':''}>U21</option>
                                 </select>
                             </div>`;
                     }
                 });
             });
 
-        function saveWithClass(selectEl, i, j) {
-            let klasse = selectEl.getAttribute('data-klasse');
-            let status = selectEl.value;
-            let finalValue = status ? (klasse + " | " + status) : klasse;
-            saveData(i, j, finalValue);
+        function showSelect(box) {
+            box.querySelector('.status').style.display = 'none';
+            box.querySelector('select').style.display = 'block';
         }
 
-        function saveData(row, col, val) {
-            fetch(url, {
-                method: "POST",
-                body: JSON.stringify({row, col, val}),
-                mode: "no-cors"
-            }).then(() => location.reload());
+        function markAsChanged(selectEl, row, col) {
+            let box = selectEl.parentElement;
+            let klasse = selectEl.getAttribute('data-klasse');
+            let status = selectEl.value;
+            let newVal = status ? (klasse + " | " + status) : klasse;
+
+            // Box optisch markieren
+            box.classList.add('geaendert');
+            box.querySelector('.status').innerText = status || "frei";
+            box.querySelector('.status').style.display = 'block';
+            selectEl.style.display = 'none';
+
+            // Änderung in Liste speichern (oder alte Änderung überschreiben)
+            pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
+            pendingChanges.push({ row, col, val: newVal });
+
+            document.getElementById('status-msg').innerText = pendingChanges.length + " Änderung(en) ungespeichert!";
+        }
+
+        async function saveAllChanges() {
+            if (pendingChanges.length === 0) return alert("Keine Änderungen vorhanden.");
+            
+            document.getElementById('status-msg').innerText = "Speichere...";
+            
+            // Wir senden jede Änderung einzeln (einfachste Lösung für das vorhandene Script)
+            for (let change of pendingChanges) {
+                await fetch(url, {
+                    method: "POST",
+                    body: JSON.stringify(change),
+                    mode: "no-cors"
+                });
+            }
+            
+            alert("Alle Änderungen wurden im Sheet gespeichert!");
+            location.reload();
         }
     </script>
 </body>
