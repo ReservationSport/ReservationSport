@@ -5,20 +5,21 @@
     <title>Sport Planer</title>
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        /* 1 Spalte für Zeit (150px) + 5 gleiche Spalten für Montag und Button */
         .grid { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 5px; max-width: 1000px; margin: auto; }
         .box { border: 1px solid #333; padding: 10px; background: #262626; cursor: pointer; min-height: 55px; position: relative; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .header { background: #444; font-weight: bold; cursor: default; }
         .zeit { font-weight: bold; background: #333; border-right: 2px solid #555; justify-content: flex-start; align-items: flex-start; padding-left: 15px; }
         
-        /* Montag spannt über 4 Spalten */
         .header-tag { background: #444 !important; color: #fff; font-weight: bold; grid-column: span 4; font-size: 1.5em; padding: 15px; }
         
-        /* Button-Zelle: gleiche Farbe wie Montag-Header */
         .btn-cell { background: #444 !important; border: none; display: flex; align-items: center; justify-content: center; }
-        .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
         
-        /* Hallen-Farben */
+        /* Button ist standardmäßig matt grau */
+        .save-btn { padding: 8px 12px; font-size: 0.7em; cursor: not-allowed; background: #555; color: #aaa; border: none; border-radius: 3px; font-weight: bold; text-transform: uppercase; transition: all 0.3s; }
+        
+        /* Wird grün, wenn aktiv */
+        .save-btn.active { background: #27ae60; color: white; cursor: pointer; }
+        
         .halle1 { background-color: #e74c3c !important; }
         .halle2 { background-color: #f1c40f !important; color: black !important; }
         .halle3 { background-color: #2ecc71 !important; }
@@ -30,7 +31,6 @@
         .status { font-size: 0.8em; color: #fff; font-style: italic; min-height: 1em; }
         
         select { width: 90%; padding: 5px; background: #444; color: white; border: none; }
-        #status-msg { font-size: 0.6em; color: #e67e22; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -39,10 +39,7 @@
         <div class="box header">Zeit</div>
         <div class="box header-tag">MONTAG</div>
         <div class="box btn-cell">
-            <div>
-                <button class="save-btn" onclick="saveAllChanges()">Speichern</button>
-                <span id="status-msg"></span>
-            </div>
+            <button id="saveBtn" class="save-btn" onclick="saveAllChanges()" disabled>Speichern</button>
         </div>
     </div>
 
@@ -104,12 +101,20 @@
 
             pendingChanges = pendingChanges.filter(c => !(c.row === row && c.col === col));
             pendingChanges.push({ row, col, val: finalVal });
-            document.getElementById('status-msg').innerText = pendingChanges.length + " offene";
+
+            // Button Logik: Farbe anpassen und aktivieren
+            const btn = document.getElementById('saveBtn');
+            if (pendingChanges.length > 0) {
+                btn.classList.add('active');
+                btn.disabled = false;
+            }
         }
 
         async function saveAllChanges() {
             if (pendingChanges.length === 0) return;
-            document.getElementById('status-msg').innerText = "Speichere...";
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "Speichere...";
+            
             for (let change of pendingChanges) {
                 await fetch(url, { method: "POST", body: JSON.stringify(change), mode: "no-cors" });
             }
