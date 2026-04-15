@@ -45,12 +45,14 @@
         const url = "https://script.google.com/macros/s/AKfycbxGV-J5CTk8xVKtIm_w_3LKSekWJPP_KFofDqejD5tZKcGVZhTnpZyg4_6N5th2MhSXiA/exec";
         let pendingChanges = [];
 
-        // Funktion zum Schließen aller Dropdowns
+        function closeAllMenus() {
+            document.querySelectorAll('select').forEach(sel => sel.style.opacity = '0');
+            document.querySelectorAll('.status').forEach(st => st.style.display = 'block');
+        }
+
+        // Klick außerhalb schließt auch
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.box')) {
-                document.querySelectorAll('select').forEach(sel => sel.style.opacity = '0');
-                document.querySelectorAll('.status').forEach(st => st.style.display = 'block');
-            }
+            if (!e.target.closest('.box')) closeAllMenus();
         });
 
         function getColorClass(status) {
@@ -71,7 +73,8 @@
                     let cClass = getColorClass(statusName);
 
                     container.innerHTML += `
-                        <div class="box ${statusName ? 'besetzt ' + cClass : ''}" onclick="this.querySelector('select').style.opacity='1'; this.querySelector('.status').style.display='none';">
+                        <div class="box ${statusName ? 'besetzt ' + cClass : ''}" 
+                             onclick="closeAllMenus(); this.querySelector('select').style.opacity='1'; this.querySelector('.status').style.display='none';">
                             <span class="klasse">${klasseName}</span>
                             <span class="status">${statusName}</span>
                             <select data-klasse="${klasseName}" onchange="updateView(this, ${i}, ${j})">
