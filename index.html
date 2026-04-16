@@ -35,16 +35,9 @@
         .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
         
-        .sport-loader { 
-            font-size: 20px; 
-            display: none; 
-            animation: bounce 0.6s infinite alternate;
-            filter: grayscale(100%) brightness(1.5);
-            -webkit-filter: grayscale(100%) brightness(1.5);
-        }
+        .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; filter: grayscale(100%) brightness(1.5); }
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
 
-        /* Trennlinien */
         .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
         .divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
     </style>
@@ -79,6 +72,17 @@
             pendingChanges = [];
 
             const dateObj = new Date(dateVal);
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
+
+            // Prüfung: Vergangenheit
+            if (dateObj < heute) {
+                container.innerHTML = `<div class="box info-box">Vergangene Tage können nicht mehr bearbeitet werden.</div>`;
+                toggleLoader(false);
+                return;
+            }
+
+            // Prüfung: Wochenende
             if (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
                 container.innerHTML = `<div class="box info-box">Kein Unterricht am Wochenende.</div>`;
                 toggleLoader(false);
@@ -92,16 +96,6 @@
                 const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
                 
                 data.forEach((row, rowIndex) => {
-                    // Trennlinien Logik
-                    if (rowIndex === 4 || rowIndex === 10) {
-                        container.innerHTML += `<div class="divider-thin"></div>`;
-                    }
-                    if (rowIndex === 7) {
-                        container.innerHTML += `<div class="divider-thick"></div>`;
-                    }
-                    
-                    container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
-                    
                     if (rowIndex === 0) {
                         container.innerHTML += `
                             <div class="box header-row">
@@ -112,6 +106,12 @@
                                 </div>
                             </div>`;
                     } else {
+                        let unterrichtIndex = rowIndex - 1;
+                        if (unterrichtIndex === 4 || unterrichtIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
+                        if (unterrichtIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
+                        
+                        container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                        
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || "";
                             let teile = val.split(' | ');
@@ -131,7 +131,8 @@
                         }
                     }
                 });
-            } finally { toggleLoader(false); }
+            } catch (e) { container.innerHTML = `<div class="box info-box">Fehler beim Laden.</div>`; } 
+            finally { toggleLoader(false); }
         }
 
         window.addChange = function(el, time, slotIndex, klasse) {
@@ -153,20 +154,11 @@
 
         window.saveChanges = async function() {
             if (pendingChanges.length === 0) return;
-            const btn = document.getElementById('saveBtn');
-            const ball = document.getElementById('sport-loader');
-            
-            btn.style.display = 'none';
-            ball.style.display = 'block';
-            
+            const btn = document.getElementById('saveBtn'), ball = document.getElementById('sport-loader');
+            btn.style.display = 'none'; ball.style.display = 'block';
             await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
-            
-            pendingChanges = [];
-            ball.style.display = 'none';
-            btn.style.display = 'block';
-            btn.classList.remove('pending');
-            btn.innerText = "GESPEICHERT!";
-            
+            pendingChanges = []; ball.style.display = 'none'; btn.style.display = 'block';
+            btn.classList.remove('pending'); btn.innerText = "GESPEICHERT!";
             setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
         };
 
