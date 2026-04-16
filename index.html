@@ -9,7 +9,8 @@
         .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
         .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; }
+        .nav-group { display: flex; gap: 5px; width: 90px; }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .zeit-box { background: #333; font-weight: bold; }
         .header-row { grid-column: span 6; background: #333; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; }
@@ -18,6 +19,8 @@
         .save-btn.pending { background: #27ae60; }
         .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; margin-right: 10px; }
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
+        .divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         .klasse { font-weight: bold; }
@@ -25,9 +28,15 @@
 </head>
 <body>
     <div class="date-control">
-        <button class="nav-btn" onclick="window.changeDate(-1)">◀</button>
+        <div class="nav-group">
+            <button class="nav-btn" onclick="window.changeDate(-7)">⏮</button>
+            <button class="nav-btn" onclick="window.changeDate(-1)">◀</button>
+        </div>
         <input type="date" id="datePicker">
-        <button class="nav-btn" onclick="window.changeDate(1)">▶</button>
+        <div class="nav-group">
+            <button class="nav-btn" onclick="window.changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="window.changeDate(7)">⏭</button>
+        </div>
         <div id="globalLoader" class="global-loader"></div>
     </div>
     <div class="grid" id="plan"></div>
@@ -49,17 +58,24 @@
             const farbMap = {};
             options.forEach(opt => farbMap[opt[0]] = opt[1]);
 
+            const dateObj = new Date(dateVal);
+            const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+            const titel = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
+
             const container = document.getElementById('plan');
             container.innerHTML = "";
             
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 0) {
-                    container.innerHTML += `<div class="box header-row"><span>${dateVal}</span>
+                    container.innerHTML += `<div class="box header-row"><span>${titel}</span>
                         <div class="save-container">
                             <div id="sport-loader" class="sport-loader">⚽</div>
                             <button id="saveBtn" class="save-btn" onclick="window.saveChanges()">SPEICHERN</button>
                         </div></div>`;
                 } else {
+                    if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
+                    if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
+                    
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                     for(let i = 1; i <= 5; i++) {
                         let [klasse, resName] = (row[i] || "").split(' | ');
@@ -82,7 +98,7 @@
             const color = farbMap[res] || "#262626";
             el.parentElement.style.backgroundColor = color;
             el.parentElement.style.color = getTextColor(color);
-            el.parentElement.querySelector('.res').innerText = (res === "") ? "" : res;
+            el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
             pendingChanges.push({time, slotIndex, val: klasse + (res ? " | " + res : "")});
             document.getElementById('saveBtn').classList.add('pending');
         };
@@ -105,6 +121,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('datePicker').valueAsDate = new Date();
             loadPlan();
+            document.getElementById('datePicker').addEventListener('change', loadPlan);
         });
     </script>
 </body>
