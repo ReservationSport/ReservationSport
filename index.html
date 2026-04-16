@@ -107,7 +107,8 @@
                             cell.innerHTML = `<div class="klasse">${klasse}</div><div class="res">${res}</div><select></select>`;
                             let sel = cell.querySelector('select');
                             sel.innerHTML = `<option value="">---</option>` + options.map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('');
-                            sel.onchange = (e) => window.addChange(e.target, row[0], i, klasse);
+                            // KORREKTUR HIER: Event direkt zuweisen
+                            sel.addEventListener('change', (e) => window.addChange(e.target, row[0], i, klasse));
                             container.appendChild(cell);
                         }
                     }
