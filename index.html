@@ -19,18 +19,9 @@
 
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
-
-        .header-row { 
-            grid-column: span 5; background: #333; font-size: 14px; font-weight: bold; 
-            padding: 0 15px; display: flex; align-items: center; justify-content: space-between; 
-        }
-        .header-row span { flex-grow: 1; text-align: left; }
-        .header-controls { display: flex; align-items: center; gap: 15px; }
-        
-        .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; }
-        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
-
+        .header-row { grid-column: span 5; background: #333; font-size: 14px; font-weight: bold; cursor: default; position: relative; display: flex; align-items: center; justify-content: center; }
         .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
+        
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         .bg-red { background: #c0392b !important; }
@@ -39,7 +30,7 @@
         .bg-yellow { background: #f1c40f !important; color: black !important; }
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
-        .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; }
+        .save-btn { position: absolute; right: 10px; padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; z-index: 10; }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
     </style>
 </head>
@@ -90,14 +81,7 @@
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                     
                     if (rowIndex === 0) {
-                        container.innerHTML += `
-                            <div class="box header-row">
-                                <span>${titelText}</span>
-                                <div class="header-controls">
-                                    <div id="sport-loader" class="sport-loader">⚽</div>
-                                    <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
-                                </div>
-                            </div>`;
+                        container.innerHTML += `<div class="box header-row"><span>${titelText}</span><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div>`;
                     } else {
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || "";
@@ -119,6 +103,7 @@
             } finally { toggleLoader(false); }
         }
 
+        // Globale Funktionen, damit sie im HTML-Event-Handler gefunden werden
         window.addChange = function(el, time, slotIndex, klasse) {
             let res = el.value;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
@@ -139,12 +124,11 @@
         window.saveChanges = async function() {
             if (pendingChanges.length === 0) return;
             const btn = document.getElementById('saveBtn');
-            const ball = document.getElementById('sport-loader');
+            toggleLoader(true);
             btn.disabled = true;
-            ball.style.display = 'block'; 
             await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
             pendingChanges = [];
-            ball.style.display = 'none';
+            toggleLoader(false);
             btn.classList.remove('pending');
             btn.innerText = "GESPEICHERT!";
             btn.disabled = false;
