@@ -23,7 +23,6 @@
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         
-        /* Hervorhebung für den Speicherbutton, wenn Änderungen vorliegen */
         #saveBtn { padding: 10px 20px; background: #333; border: 1px solid #444; color: white; cursor: pointer; transition: 0.3s; }
         #saveBtn.pending { border: 2px solid #27ae60; background: #27ae60; }
     </style>
@@ -61,7 +60,8 @@
             container.innerHTML = "";
             
             data.forEach((row, rowIndex) => {
-                if (rowIndex === 6) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
+                // Trennlinie eine Stufe tiefer (nach Index 7)
+                if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
@@ -72,6 +72,7 @@
                     let reservierung = teile[1] || "";
                     let farbKlasse = getFarbe(reservierung);
                     
+                    // Header-Zeile (rowIndex 0) ist starr, Rest ist bearbeitbar
                     if (rowIndex === 0) {
                         container.innerHTML += `<div class="box zeit-box"><div class="klasse">${klasse}</div></div>`;
                     } else {
@@ -98,7 +99,6 @@
             el.parentElement.className = `box ${getFarbe(res)}`;
             el.style.opacity = '0';
             
-            // Änderung nur sammeln
             pendingChanges.push({ time, slotIndex, val: speicherWert });
             document.getElementById('saveBtn').className = "pending";
         }
