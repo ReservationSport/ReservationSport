@@ -44,8 +44,9 @@
         }
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
 
-        /* Dünne Trennlinien */
+        /* Trennlinien */
         .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
+        .divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -91,9 +92,12 @@
                 const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
                 
                 data.forEach((row, rowIndex) => {
-                    // Trennlinien einfügen (3/4 und 9/10)
+                    // Logik für die Trennlinien
                     if (rowIndex === 4 || rowIndex === 10) {
                         container.innerHTML += `<div class="divider-thin"></div>`;
+                    }
+                    if (rowIndex === 7) {
+                        container.innerHTML += `<div class="divider-thick"></div>`;
                     }
                     
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
