@@ -11,7 +11,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-group { display: flex; gap: 5px; width: 90px; }
         #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; }
-        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; visibility: hidden; }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
@@ -19,27 +19,12 @@
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
-        
         .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; height: 40px; }
-        
-        .save-btn { 
-            padding: 8px 20px; 
-            background: #e67e22; 
-            color: white; border: none; border-radius: 20px; 
-            font-weight: bold; cursor: pointer; display: none; 
-            transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+        .save-btn { padding: 8px 20px; background: #e67e22; color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .save-btn:hover { background: #d35400; transform: translateY(-2px); }
         .save-btn.success { background: #27ae60; } 
-
-        .sport-loader { 
-            font-size: 20px; 
-            visibility: hidden; /* Platz reservieren, aber unsichtbar */
-            animation: bounce 0.6s infinite alternate; 
-            margin-right: 10px; 
-        }
+        .sport-loader { font-size: 20px; visibility: hidden; animation: bounce 0.6s infinite alternate; margin-right: 10px; }
         .sport-loader.active { visibility: visible; }
-        
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
         .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
         .divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
@@ -53,8 +38,8 @@
         </div>
         <input type="date" id="datePicker">
         <div class="nav-group">
-            <button class="nav-btn" style="visibility: visible;" onclick="changeDate(1)">▶</button>
-            <button class="nav-btn" style="visibility: visible;" onclick="changeDate(7)">⏭</button>
+            <button class="nav-btn" onclick="changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
         </div>
         <div id="globalLoader" class="global-loader"></div>
     </div>
@@ -67,10 +52,24 @@
 
         function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
 
+        // KORREKTUR: Navigation steuern
+        function updateNavButtons() {
+            const dateVal = document.getElementById('datePicker').value;
+            if(!dateVal) return;
+            const selectedDate = new Date(dateVal); selectedDate.setHours(12,0,0,0);
+            const today = new Date(); today.setHours(12,0,0,0);
+            const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
+            document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
+        }
+
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
             if (!dateVal) return;
             toggleLoader(true);
+            updateNavButtons(); // KORREKTUR: Hier wird die Sichtbarkeit jetzt jedes Mal neu berechnet
+            
             const container = document.getElementById('plan');
             container.innerHTML = ""; pendingChanges = [];
 
