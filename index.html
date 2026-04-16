@@ -7,55 +7,17 @@
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         
-        /* Navigations-Container: Alles symmetrisch und bündig */
-        .date-control { 
-            text-align: center; 
-            margin-bottom: 20px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 2px; 
-        }
+        .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 2px; }
         
-        #datePicker { 
-            padding: 10px; 
-            background: #333; 
-            color: white; 
-            border: 1px solid #444; 
-            height: 40px; 
-            box-sizing: border-box; 
-            margin: 0 5px;
-        }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; margin: 0 5px; cursor: pointer; }
 
-        .nav-btn {
-            height: 40px; 
-            width: 40px; 
-            background: #333;
-            border: 1px solid #444;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .nav-btn:hover { background: #444; }
 
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
-        .header-row { 
-            grid-column: span 5; 
-            background: #333; 
-            font-size: 14px; 
-            font-weight: bold; 
-            cursor: default; 
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
+        .header-row { grid-column: span 5; background: #333; font-size: 14px; font-weight: bold; cursor: default; position: relative; display: flex; align-items: center; justify-content: center; }
         .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
         
         .klasse { font-weight: bold; }
@@ -66,35 +28,12 @@
         .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
 
-        .sport-loader { 
-            font-size: 20px; 
-            position: absolute; 
-            right: 120px; 
-            display: none; 
-            animation: bounce 0.6s infinite alternate; 
-        }
-
-        @keyframes bounce {
-            0% { transform: translateY(0); animation-timing-function: ease-out; }
-            50% { transform: translateY(-15px) scaleX(1.05); animation-timing-function: ease-in; }
-            100% { transform: translateY(0) scaleX(0.95); }
-        }
+        .sport-loader { font-size: 20px; position: absolute; right: 120px; display: none; animation: bounce 0.6s infinite alternate; }
+        @keyframes bounce { 0% { transform: translateY(0); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0); } }
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         
-        .save-btn { 
-            position: absolute;
-            right: 10px;
-            padding: 5px 15px; 
-            background: #444; 
-            border: 1px solid #666; 
-            color: white; 
-            cursor: pointer; 
-            font-size: 10px;
-            transition: 0.3s;
-            border-radius: 3px;
-            z-index: 10;
-        }
+        .save-btn { position: absolute; right: 10px; padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; z-index: 10; }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
         .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
@@ -103,9 +42,7 @@
     <div class="date-control">
         <button class="nav-btn" onclick="changeDate(-7)">⏮</button>
         <button class="nav-btn" onclick="changeDate(-1)">◀</button>
-        
-        <input type="date" id="datePicker" onchange="loadPlan()">
-        
+        <input type="date" id="datePicker">
         <button class="nav-btn" onclick="changeDate(1)">▶</button>
         <button class="nav-btn" onclick="changeDate(7)">⏭</button>
     </div>
@@ -115,10 +52,19 @@
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
         let pendingChanges = [];
 
+        // Initialisierung
+        document.addEventListener('DOMContentLoaded', () => {
+            const dp = document.getElementById('datePicker');
+            dp.valueAsDate = new Date();
+            dp.addEventListener('change', loadPlan);
+            loadPlan();
+        });
+
         function changeDate(days) {
-            let date = new Date(document.getElementById('datePicker').value);
+            const dp = document.getElementById('datePicker');
+            let date = new Date(dp.value);
             date.setDate(date.getDate() + days);
-            document.getElementById('datePicker').valueAsDate = date;
+            dp.valueAsDate = date;
             loadPlan();
         }
 
@@ -132,6 +78,8 @@
 
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
+            if (!dateVal) return; // Verhindert Fehler bei leerem Picker
+            
             const dateObj = new Date(dateVal);
             const container = document.getElementById('plan');
             container.innerHTML = "";
@@ -150,7 +98,6 @@
             
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
-                
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
                 if (rowIndex === 0) {
@@ -167,7 +114,6 @@
                         let klasse = teile[0];
                         let reservierung = teile[1] || "";
                         let farbKlasse = getFarbe(reservierung);
-                        
                         container.innerHTML += `
                             <div class="box ${farbKlasse}">
                                 <div class="klasse">${klasse}</div>
@@ -189,10 +135,25 @@
             el.parentElement.className = `box ${getFarbe(res)}`;
             el.style.opacity = '0';
             pendingChanges.push({ time, slotIndex, val: speicherWert });
-            
             const btn = document.getElementById('saveBtn');
             if(btn) btn.classList.add('pending');
         }
 
         async function saveChanges() {
-            if (pendingChanges.length === 0)
+            if (pendingChanges.length === 0) return;
+            const btn = document.getElementById('saveBtn');
+            const loader = document.getElementById('sport-loader-header');
+            btn.disabled = true;
+            btn.innerText = "Speichere...";
+            if(loader) loader.style.display = 'block';
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
+            pendingChanges = [];
+            if(loader) loader.style.display = 'none';
+            btn.classList.remove('pending');
+            btn.innerText = "GESPEICHERT!";
+            btn.disabled = false;
+            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
+        }
+    </script>
+</body>
+</html>
