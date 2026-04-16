@@ -88,7 +88,8 @@
                 const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
                 
                 data.forEach((row, rowIndex) => {
-                    if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
+                    // Hier wurde das Blau durch Grau (#444) ersetzt
+                    if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0;"></div>`;
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                     
                     if (rowIndex === 0) {
