@@ -16,12 +16,11 @@
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
         
-        /* HIER IST DIE VERBESSERTE LESBARKEIT */
         .info-box { 
             grid-column: span 6; 
             padding: 40px; 
             text-align: center; 
-            color: #ccc; 
+            color: #d1d1d1; 
             font-style: italic; 
             font-size: 18px; 
         }
@@ -105,7 +104,7 @@
                 const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 data.forEach((row, rowIndex) => {
                     if (rowIndex === 0) {
-                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">⚽</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
+                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
                     } else {
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
