@@ -25,7 +25,7 @@
     <div class="grid" id="plan"></div>
 
     <script>
-        const url = "DEINE_WEBAPP_URL"; // HIER DEINE URL EINTRAGEN
+        const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
         let pendingChanges = [];
 
         function getTextColor(bgColor) {
@@ -35,6 +35,7 @@
 
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
+            if(!dateVal) return;
             const res = await fetch(`${url}?date=${dateVal}`);
             const {data, options} = await res.json();
             const farbMap = {};
@@ -69,11 +70,20 @@
 
         window.saveChanges = async () => {
             await fetch(url, {method: "POST", body: JSON.stringify({date: document.getElementById('datePicker').value, changes: pendingChanges})});
-            pendingChanges = []; alert("Gespeichert!");
+            pendingChanges = []; alert("Erfolgreich gespeichert!");
         };
 
-        window.changeDate = (d) => { /* Logik für Datumswechsel */ loadPlan(); };
-        document.addEventListener('DOMContentLoaded', loadPlan);
+        window.changeDate = (d) => { 
+            let date = new Date(document.getElementById('datePicker').value);
+            date.setDate(date.getDate() + d);
+            document.getElementById('datePicker').valueAsDate = date;
+            loadPlan();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('datePicker').valueAsDate = new Date();
+            loadPlan();
+        });
     </script>
 </body>
 </html>
