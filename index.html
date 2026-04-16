@@ -8,7 +8,6 @@
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         
         .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
-        
         .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -31,18 +30,12 @@
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         
-        /* Save-Bereich & Basketball */
         .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; }
         .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
         
-        .basket-loader { 
-            display: none; 
-            width: 28px; height: 28px; 
-            margin-right: 10px;
-            fill: #fff;
-            animation: spin 1s linear infinite;
-        }
+        /* Basketball Loader */
+        .basket-loader { display: none; width: 28px; height: 28px; margin-right: 10px; fill: #fff; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
@@ -103,3 +96,80 @@
                     } else {
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || "";
+                            let teile = val.split(' | ');
+                            let klasse = teile[0];
+                            let reservierung = teile[1] || "";
+                            container.innerHTML += `
+                                <div class="box ${getFarbe(reservierung)}">
+                                    <div class="klasse">${klasse}</div>
+                                    <div class="res">${reservierung}</div>
+                                    <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
+                                        <option value="">---</option>
+                                        ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}" ${reservierung === r ? 'selected' : ''}>${r}</option>`).join('')}
+                                    </select>
+                                </div>`;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Fehler beim Laden:", e);
+                container.innerHTML = `<div class="box info-box">Fehler beim Laden der Daten.</div>`;
+            } finally { toggleLoader(false); }
+        }
+
+        window.addChange = function(el, time, slotIndex, klasse) {
+            let res = el.value;
+            let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
+            el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
+            el.parentElement.className = `box ${getFarbe(res)}`;
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
+            document.getElementById('saveBtn').classList.add('pending');
+        };
+
+        window.changeDate = function(days) {
+            const dp = document.getElementById('datePicker');
+            let date = new Date(dp.value);
+            date.setDate(date.getDate() + days);
+            dp.valueAsDate = date;
+            loadPlan();
+        };
+
+        window.saveChanges = async function() {
+            if (pendingChanges.length === 0) return;
+            const btn = document.getElementById('saveBtn');
+            const loader = document.getElementById('save-loader');
+            
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+            
+            try {
+                await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
+                pendingChanges = [];
+                btn.innerText = "GESPEICHERT!";
+                setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
+            } catch(e) {
+                btn.innerText = "FEHLER!";
+            } finally {
+                loader.style.display = 'none';
+                btn.style.display = 'block';
+                btn.classList.remove('pending');
+            }
+        };
+
+        function getFarbe(res) {
+            if (res.includes("Halle 1")) return "bg-red";
+            if (res.includes("Halle 4")) return "bg-blue";
+            if (res.includes("U21")) return "bg-purple";
+            if (res.includes("Halle 2")) return "bg-yellow";
+            return "";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dp = document.getElementById('datePicker');
+            dp.valueAsDate = new Date();
+            dp.addEventListener('change', loadPlan);
+            loadPlan();
+        });
+    </script>
+</body>
+</html>
