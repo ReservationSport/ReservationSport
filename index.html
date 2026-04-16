@@ -1,64 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+    <meta charset="UTF-8">
+    <title>Stundenplan Journal</title>
     <style>
-        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; text-align:center; padding-top:20%; }
-        #app { display:none; }
-        .grid-box { border:1px solid #ccc; padding:10px; margin:2px; display:inline-block; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
+        .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
+        .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .nav-group { display: flex; gap: 5px; width: 90px; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
+        .zeit-box { background: #333; font-weight: bold; cursor: default; }
+        .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
+        
+        .info-box { 
+            grid-column: span 6; 
+            padding: 40px; 
+            text-align: center; 
+            color: #d1d1d1; 
+            font-style: italic; 
+            font-size: 18px; 
+        }
+        
+        .klasse { font-weight: bold; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
+        select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
+        .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; height: 40px; }
+        .save-btn { padding: 8px 20px; background: #e67e22; color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .save-btn:hover { background: #d35400; transform: translateY(-2px); }
+        .save-btn.success { background: #27ae60; } 
+        .sport-loader { font-size: 20px; visibility: hidden; animation: bounce 0.6s infinite alternate; margin-right: 10px; }
+        .sport-loader.active { visibility: visible; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
+        .divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
     </style>
 </head>
 <body>
-
-    <div id="loginOverlay">
-        <h3>Login mit Kürzel</h3>
-        <input type="text" id="kuerzel" maxlength="2">
-        <button onclick="login()">Anmelden</button>
+    <div class="date-control">
+        <div class="nav-group">
+            <button id="btnBack7" class="nav-btn" onclick="changeDate(-7)">⏮</button>
+            <button id="btnBack1" class="nav-btn" onclick="changeDate(-1)">◀</button>
+        </div>
+        <input type="date" id="datePicker">
+        <div class="nav-group">
+            <button class="nav-btn" onclick="changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
+        </div>
+        <div id="globalLoader" class="global-loader"></div>
     </div>
-
-    <div id="app">
-        <div id="plan"></div>
-        <button id="saveBtn" style="display:none;" onclick="save()">Speichern</button>
-    </div>
+    <div class="grid" id="plan"></div>
 
     <script>
-        var changes = [];
+        const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec"; 
+        let pendingChanges = [];
+        let configFarben = {};
 
-        function login() {
-            var k = document.getElementById('kuerzel').value;
-            google.script.run.withSuccessHandler(function(ok) {
-                if(ok) {
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('app').style.display = 'block';
-                    load();
-                } else { alert("Falsches Kürzel"); }
-            }).checkLogin(k);
+        function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
+
+        function updateNavButtons() {
+            const dateVal = document.getElementById('datePicker').value;
+            if(!dateVal) return;
+            const selectedDate = new Date(dateVal); selectedDate.setHours(12,0,0,0);
+            const today = new Date(); today.setHours(12,0,0,0);
+            const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
+            document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
         }
 
-        function load() {
-            google.script.run.withSuccessHandler(function(data) {
-                var html = "";
+        async function loadPlan() {
+            const dateVal = document.getElementById('datePicker').value;
+            if (!dateVal) return;
+            toggleLoader(true);
+            updateNavButtons();
+            
+            const container = document.getElementById('plan');
+            container.innerHTML = ""; pendingChanges = [];
+
+            try {
+                const res = await fetch(`${url}?date=${dateVal}`);
+                const text = await res.text();
+                const json = JSON.parse(text);
+                
+                if (json.info === "zukunft_zu_weit") {
+                    container.innerHTML = `<div class="box info-box">Die Zukunft ist noch nicht bereit für deine Pläne! Sei geduldig...</div>`;
+                    toggleLoader(false); return;
+                }
+                const heute = new Date(); heute.setHours(12,0,0,0);
+                const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
+                
+                if (dateObj < heute) { container.innerHTML = `<div class="box info-box">Lebst du in der Vergangenheit? Lass uns nach vorne schauen!</div>`; toggleLoader(false); return; }
+                if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { container.innerHTML = `<div class="box info-box">Mach mal Pause! Es ist Wochenende...</div>`; toggleLoader(false); return; }
+
+                const data = json.data;
+                const options = json.options;
+                configFarben = {};
+                options.forEach(opt => configFarben[opt[0]] = opt[1]);
+
+                const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 data.forEach((row, rowIndex) => {
-                    row.forEach((cell, colIndex) => {
-                        html += `<input class="grid-box" value="${cell}" onchange="addChange(this, ${rowIndex+1}, ${colIndex+1})">`;
-                    });
-                    html += "<br>";
+                    if (rowIndex === 0) {
+                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
+                    } else {
+                        if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
+                        if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
+                        container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                        for(let i = 1; i <= 5; i++) {
+                            let val = row[i] || ""; let teile = val.split(' | '); let klasse = teile[0]; let res = teile[1] || "";
+                            container.innerHTML += `<div class="box" style="background-color: ${configFarben[res] || ''}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')"><option value="">---</option>${options.map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}</select></div>`;
+                        }
+                    }
                 });
-                document.getElementById('plan').innerHTML = html;
-            }).getPlanData();
+            } catch(e) { container.innerHTML = "Fehler bei der Kommunikation mit dem Server."; }
+            toggleLoader(false);
         }
 
-        function addChange(el, row, col) {
-            changes.push({row: row, col: col, val: el.value});
-            document.getElementById('saveBtn').style.display = 'block';
-        }
+        window.addChange = (el, time, slotIndex, klasse) => { 
+            let res = el.value; 
+            el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res; 
+            el.parentElement.style.backgroundColor = configFarben[res] || ""; 
+            pendingChanges.push({ time, slotIndex, val: (res === "" || res === "---") ? klasse : klasse + " | " + res }); 
+            const btn = document.getElementById('saveBtn');
+            btn.style.display = 'block';
+            btn.classList.remove('success');
+            btn.innerText = "SPEICHERN";
+        };
 
-        function save() {
-            google.script.run.withSuccessHandler(() => {
-                alert("Gespeichert");
-                changes = [];
-                document.getElementById('saveBtn').style.display = 'none';
-            }).savePlan(changes);
-        }
+        window.saveChanges = async () => { 
+            const btn = document.getElementById('saveBtn'), ball = document.getElementById('sport-loader'); 
+            btn.style.display = 'none'; 
+            ball.classList.add('active');
+            
+            try {
+                await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) }); 
+                pendingChanges = []; 
+                ball.classList.remove('active'); 
+                
+                btn.innerText = "Gespeichert!";
+                btn.classList.add('success');
+                btn.style.display = 'block';
+                
+                setTimeout(() => {
+                    btn.style.display = 'none';
+                    btn.classList.remove('success');
+                    btn.innerText = "SPEICHERN";
+                }, 1500);
+            } catch (e) {
+                ball.classList.remove('active');
+                btn.style.display = 'block';
+                btn.innerText = "Fehler!";
+                setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
+            }
+        };
+
+        window.changeDate = (days) => { const dp = document.getElementById('datePicker'); let d = new Date(dp.value); d.setDate(d.getDate() + days); dp.valueAsDate = d; loadPlan(); };
+
+        document.addEventListener('DOMContentLoaded', () => { 
+            const today = new Date(); const offset = today.getTimezoneOffset(); today.setMinutes(today.getMinutes() - offset);
+            document.getElementById('datePicker').value = today.toISOString().split('T')[0];
+            loadPlan(); document.getElementById('datePicker').addEventListener('change', loadPlan);
+        });
     </script>
 </body>
 </html>
