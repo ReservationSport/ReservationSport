@@ -7,61 +7,152 @@
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 4px; max-width: 1000px; margin: auto; }
         
-        /* Dropdown-Zellen Design */
-        .box { 
-            border: 1px solid #444; padding: 5px; background: #262626; min-height: 60px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            text-align: center; font-size: 11px; position: relative; transition: 0.2s;
-        }
-        .box:hover { border-color: #555; background: #2a2a2a; }
-        
-        /* Stylisches Overlay für das Dropdown */
-        .dropdown-wrapper {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            cursor: pointer; opacity: 0; /* Das echte <select> ist hier unsichtbar */
-        }
-        
-        /* Das eigentliche Select-Element für den Browser */
-        select {
-            width: 100%; height: 100%; opacity: 0; cursor: pointer;
-        }
+        .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
+        .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Pfeil-Icon für das Dropdown-Feld (optisch) */
-        .box::after {
-            content: '▼'; font-size: 8px; color: #666; position: absolute; bottom: 2px; right: 4px;
-            pointer-events: none;
-        }
+        .nav-group { display: flex; gap: 5px; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .nav-btn:hover { background: #444; }
+
+        .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; transition: 0.2s; }
+        .box:hover { border-color: #555; background: #2a2a2a; }
+        .dropdown-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
+        select { width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .box::after { content: '▼'; font-size: 8px; color: #666; position: absolute; bottom: 2px; right: 4px; pointer-events: none; }
 
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         .header-row { grid-column: span 5; background: #333; font-size: 14px; font-weight: bold; padding: 10px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
         
-        /* Farben & Text */
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 10px; margin-top: 4px; color: #aaa; }
         .bg-red { background: #78281f !important; }
         .bg-blue { background: #1b4f72 !important; }
         .bg-purple { background: #5b2c6f !important; }
         .bg-yellow { background: #9a7d0a !important; color: white !important; }
-
-        /* ... (Der Rest der Styles für Loader & Buttons bleibt wie gehabt) ... */
+        
+        .save-btn { position: absolute; right: 10px; padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; z-index: 10; }
+        .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
     </style>
 </head>
 <body>
+    <div class="date-control">
+        <div class="nav-group">
+            <button class="nav-btn" onclick="changeDate(-7)">⏮</button>
+            <button class="nav-btn" onclick="changeDate(-1)">◀</button>
+        </div>
+        <input type="date" id="datePicker">
+        <div class="nav-group">
+            <button class="nav-btn" onclick="changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
+        </div>
+        <div id="globalLoader" class="global-loader"></div>
+    </div>
+    <div class="grid" id="plan"></div>
+
     <script>
-        // In der loadPlan Funktion:
-        // Wir setzen das <select> in ein div mit .dropdown-wrapper für besseres Styling
-        // ...
-        container.innerHTML += `
-            <div class="box ${getFarbe(reservierung)}">
-                <div class="klasse">${klasse}</div>
-                <div class="res">${reservierung}</div>
-                <div class="dropdown-wrapper">
-                    <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
-                        <option value="">---</option>
-                        ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
-                    </select>
-                </div>
-            </div>`;
+        const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
+        let pendingChanges = [];
+
+        function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
+
+        async function loadPlan() {
+            const dateVal = document.getElementById('datePicker').value;
+            if (!dateVal) return;
+            toggleLoader(true);
+            const container = document.getElementById('plan');
+            container.innerHTML = "";
+            pendingChanges = [];
+
+            const dateObj = new Date(dateVal);
+            if (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
+                container.innerHTML = `<div class="box info-box">Kein Unterricht am Wochenende.</div>`;
+                toggleLoader(false);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${url}?date=${dateVal}`);
+                const data = await res.json();
+                const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+                const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
+                
+                data.forEach((row, rowIndex) => {
+                    if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
+                    container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                    
+                    if (rowIndex === 0) {
+                        container.innerHTML += `<div class="box header-row"><span>${titelText}</span><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div>`;
+                    } else {
+                        for(let i = 1; i <= 5; i++) {
+                            let val = row[i] || "";
+                            let teile = val.split(' | ');
+                            let klasse = teile[0];
+                            let reservierung = teile[1] || "";
+                            container.innerHTML += `
+                                <div class="box ${getFarbe(reservierung)}">
+                                    <div class="klasse">${klasse}</div>
+                                    <div class="res">${reservierung}</div>
+                                    <div class="dropdown-wrapper">
+                                        <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
+                                            <option value="">---</option>
+                                            ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                });
+            } finally { toggleLoader(false); }
+        }
+
+        window.addChange = function(el, time, slotIndex, klasse) {
+            let res = el.value;
+            let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
+            el.parentElement.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
+            el.parentElement.parentElement.className = `box ${getFarbe(res)}`;
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
+            document.getElementById('saveBtn').classList.add('pending');
+        };
+
+        window.changeDate = function(days) {
+            const dp = document.getElementById('datePicker');
+            let date = new Date(dp.value);
+            date.setDate(date.getDate() + days);
+            dp.valueAsDate = date;
+            loadPlan();
+        };
+
+        window.saveChanges = async function() {
+            if (pendingChanges.length === 0) return;
+            const btn = document.getElementById('saveBtn');
+            toggleLoader(true);
+            btn.disabled = true;
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
+            pendingChanges = [];
+            toggleLoader(false);
+            btn.classList.remove('pending');
+            btn.innerText = "GESPEICHERT!";
+            btn.disabled = false;
+            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
+        };
+
+        function getFarbe(res) {
+            if (res.includes("Halle 1")) return "bg-red";
+            if (res.includes("Halle 4")) return "bg-blue";
+            if (res.includes("U21")) return "bg-purple";
+            if (res.includes("Halle 2")) return "bg-yellow";
+            return "";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dp = document.getElementById('datePicker');
+            dp.valueAsDate = new Date();
+            dp.addEventListener('change', loadPlan);
+            loadPlan();
+        });
     </script>
 </body>
 </html>
