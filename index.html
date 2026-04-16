@@ -94,7 +94,9 @@
                                     <div class="res">${reservierung}</div>
                                     <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
                                         <option value="">---</option>
-                                        ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
+                                        ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => 
+                                            `<option value="${r}" ${reservierung === r ? 'selected' : ''}>${r}</option>`
+                                        ).join('')}
                                     </select>
                                 </div>`;
                         }
@@ -103,7 +105,6 @@
             } finally { toggleLoader(false); }
         }
 
-        // Globale Funktionen, damit sie im HTML-Event-Handler gefunden werden
         window.addChange = function(el, time, slotIndex, klasse) {
             let res = el.value;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
