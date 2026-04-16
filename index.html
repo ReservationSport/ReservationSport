@@ -10,7 +10,7 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
-        /* Header-Design mit Navigations-Buttons */
+        /* Optimierte Kopfzeile: erzwingt eine Zeile */
         .header-row { 
             grid-column: span 5; 
             background: #222; 
@@ -20,7 +20,9 @@
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
-            padding: 0 10px; 
+            padding: 0 5px; 
+            white-space: nowrap;
+            flex-wrap: nowrap;
         }
         .nav-btn { cursor: pointer; background: #333; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; color: white; user-select: none; }
         .nav-btn:hover { background: #444; }
@@ -94,7 +96,7 @@
                     container.innerHTML += `
                         <div class="box header-row">
                             <span class="nav-btn" onclick="changeDate(-1)">◀</span>
-                            <span>${titelText}</span>
+                            <span style="flex-grow: 1; text-align: center;">${titelText}</span>
                             <span class="nav-btn" onclick="changeDate(1)">▶</span>
                         </div>`;
                 } else {
