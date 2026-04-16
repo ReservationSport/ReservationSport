@@ -7,7 +7,7 @@
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         
-        /* Navigations-Container: Alles auf einer Höhe, bündig */
+        /* Navigations-Container: Alles symmetrisch und bündig */
         .date-control { 
             text-align: center; 
             margin-bottom: 20px; 
@@ -24,6 +24,7 @@
             border: 1px solid #444; 
             height: 40px; 
             box-sizing: border-box; 
+            margin: 0 5px;
         }
 
         .nav-btn {
@@ -100,7 +101,11 @@
 </head>
 <body>
     <div class="date-control">
+        <button class="nav-btn" onclick="changeDate(-7)">⏮</button>
+        <button class="nav-btn" onclick="changeDate(-1)">◀</button>
+        
         <input type="date" id="datePicker" onchange="loadPlan()">
+        
         <button class="nav-btn" onclick="changeDate(1)">▶</button>
         <button class="nav-btn" onclick="changeDate(7)">⏭</button>
     </div>
@@ -190,28 +195,4 @@
         }
 
         async function saveChanges() {
-            if (pendingChanges.length === 0) return;
-            const btn = document.getElementById('saveBtn');
-            const loader = document.getElementById('sport-loader-header');
-            
-            btn.disabled = true;
-            btn.innerText = "Speichere...";
-            if(loader) loader.style.display = 'block';
-            
-            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
-            
-            pendingChanges = [];
-            if(loader) loader.style.display = 'none';
-            
-            btn.classList.remove('pending');
-            btn.innerText = "GESPEICHERT!";
-            btn.disabled = false;
-            
-            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
-        }
-
-        document.getElementById('datePicker').valueAsDate = new Date();
-        loadPlan();
-    </script>
-</body>
-</html>
+            if (pendingChanges.length === 0)
