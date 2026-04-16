@@ -10,6 +10,9 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
+        /* Die neue Klasse für die verbundene Header-Zelle */
+        .header-row { grid-column: span 5; background: #222; font-size: 14px; font-weight: bold; cursor: default; }
+        
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         
@@ -21,7 +24,6 @@
         .loader { border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Das Dropdown liegt unsichtbar über der ganzen Box */
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
         
         #saveBtn { padding: 10px 20px; background: #333; border: 1px solid #444; color: white; cursor: pointer; transition: 0.3s; }
@@ -53,28 +55,36 @@
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             
-            const date = document.getElementById('datePicker').value;
-            const res = await fetch(`${url}?date=${date}`);
+            const dateVal = document.getElementById('datePicker').value;
+            const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
             
             const container = document.getElementById('plan');
             container.innerHTML = "";
             
+            // Wochentag berechnen
+            const dateObj = new Date(dateVal);
+            const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+            const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
+            
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
+                // Zeitspalte rendern
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
-                for(let i = 1; i <= 5; i++) {
-                    let val = row[i] || "";
-                    let teile = val.split(' | ');
-                    let klasse = teile[0];
-                    let reservierung = teile[1] || "";
-                    let farbKlasse = getFarbe(reservierung);
-                    
-                    if (rowIndex === 0) {
-                        container.innerHTML += `<div class="box zeit-box"><div class="klasse">${klasse}</div></div>`;
-                    } else {
+                // Erste Zeile (Header) speziell behandeln
+                if (rowIndex === 0) {
+                    container.innerHTML += `<div class="box header-row">${titelText}</div>`;
+                } else {
+                    // Datenspalten
+                    for(let i = 1; i <= 5; i++) {
+                        let val = row[i] || "";
+                        let teile = val.split(' | ');
+                        let klasse = teile[0];
+                        let reservierung = teile[1] || "";
+                        let farbKlasse = getFarbe(reservierung);
+                        
                         container.innerHTML += `
                             <div class="box ${farbKlasse}">
                                 <div class="klasse">${klasse}</div>
@@ -93,35 +103,20 @@
         function addChange(el, time, slotIndex, klasse) {
             let res = el.value;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
-            
-            // 1. Anzeige sofort aktualisieren
             el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
             el.parentElement.className = `box ${getFarbe(res)}`;
-            
-            // 2. Dropdown ausblenden (wird durch opacity 0 erreicht)
             el.style.opacity = '0';
-            
-            // 3. Änderungen speichern
             pendingChanges.push({ time, slotIndex, val: speicherWert });
             document.getElementById('saveBtn').className = "pending";
         }
 
         async function saveChanges() {
             if (pendingChanges.length === 0) return;
-            
             document.getElementById('loader').style.display = 'block';
-            await fetch(url, { 
-                method: "POST", 
-                body: JSON.stringify({ 
-                    date: document.getElementById('datePicker').value, 
-                    changes: pendingChanges 
-                }) 
-            });
-            
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             document.getElementById('loader').style.display = 'none';
-            
             const btn = document.getElementById('saveBtn');
             btn.innerText = "GESPEICHERT!";
             setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
