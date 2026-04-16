@@ -9,12 +9,9 @@
         .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
         .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .nav-group { display: flex; gap: 5px; }
-        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; }
         .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .nav-btn:hover { background: #444; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
-        .zeit-box { background: #333; font-weight: bold; cursor: default; }
+        .zeit-box { background: #333; font-weight: bold; }
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         .bg-red { background: #c0392b !important; }
@@ -22,8 +19,7 @@
         .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
-        .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; }
-        .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; border-radius: 3px; }
+        .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; border-radius: 3px; }
         .save-btn.pending { background: #27ae60; }
         .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; }
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
@@ -33,15 +29,9 @@
 </head>
 <body>
     <div class="date-control">
-        <div class="nav-group">
-            <button class="nav-btn" onclick="changeDate(-7)">⏮</button>
-            <button class="nav-btn" onclick="changeDate(-1)">◀</button>
-        </div>
+        <button class="nav-btn" onclick="changeDate(-1)">◀</button>
         <input type="date" id="datePicker">
-        <div class="nav-group">
-            <button class="nav-btn" onclick="changeDate(1)">▶</button>
-            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
-        </div>
+        <button class="nav-btn" onclick="changeDate(1)">▶</button>
         <div id="globalLoader" class="global-loader"></div>
     </div>
     <div class="grid" id="plan"></div>
@@ -50,39 +40,21 @@
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
         let pendingChanges = [];
 
-        function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
-
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
-            if (!dateVal) return;
-            toggleLoader(true);
+            document.getElementById('globalLoader').style.display = 'block';
             const container = document.getElementById('plan');
             container.innerHTML = "";
-            pendingChanges = [];
-
             const res = await fetch(`${url}?date=${dateVal}`);
             const {plan, options} = await res.json();
             
             plan.forEach((row, index) => {
-                if (index === 4 || index === 10) container.innerHTML += `<div class="divider-thin"></div>`;
-                if (index === 7) container.innerHTML += `<div class="divider-thick"></div>`;
-                
-                // Header-Zeile (nur beim ersten Mal)
-                if (index === 0) {
-                    container.innerHTML += `
-                        <div class="box zeit-box">Zeit</div>
-                        <div class="box" style="grid-column: span 5; font-weight:bold;">
-                            ${row[0]}
-                            <div class="save-container">
-                                <div id="sport-loader" class="sport-loader">⚽</div>
-                                <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
-                            </div>
-                        </div>`;
-                }
+                if (index === 4 || index === 11) container.innerHTML += `<div class="divider-thin"></div>`;
+                if (index === 8) container.innerHTML += `<div class="divider-thick"></div>`;
                 
                 container.innerHTML += `<div class="box zeit-box">${row[1]}</div>`;
                 for(let i = 2; i <= 6; i++) {
-                    let val = row[i] || "";
+                    let val = (row[i] !== undefined && row[i] !== null) ? row[i].toString() : "";
                     let [klasse, reservierung] = val.split(' | ');
                     container.innerHTML += `
                         <div class="box ${getFarbe(reservierung || "")}">
@@ -95,29 +67,13 @@
                         </div>`;
                 }
             });
-            toggleLoader(false);
+            document.getElementById('globalLoader').style.display = 'none';
         }
 
         window.addChange = function(el, time, slotIndex, klasse) {
             pendingChanges.push({ time, slotIndex, val: klasse + " | " + el.value });
             el.parentElement.querySelector('.res').innerText = el.value;
             el.parentElement.className = `box ${getFarbe(el.value)}`;
-            document.getElementById('saveBtn').classList.add('pending');
-        };
-
-        window.saveChanges = async function() {
-            if (pendingChanges.length === 0) return;
-            const btn = document.getElementById('saveBtn');
-            const ball = document.getElementById('sport-loader');
-            btn.style.display = 'none';
-            ball.style.display = 'block';
-            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
-            pendingChanges = [];
-            ball.style.display = 'none';
-            btn.style.display = 'block';
-            btn.classList.remove('pending');
-            btn.innerText = "GESPEICHERT!";
-            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
         };
 
         window.changeDate = function(days) {
