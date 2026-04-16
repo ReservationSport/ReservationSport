@@ -18,9 +18,14 @@
             cursor: default; 
             display: flex; 
             align-items: center; 
-            justify-content: space-between; 
+            justify-content: space-between; /* Verteilt Elemente an den Rand */
             padding: 0 10px;
         }
+        
+        /* Flex-Items für perfekte Ausrichtung */
+        .header-left { flex: 1; display: flex; justify-content: flex-start; }
+        .header-center { flex: 1; display: flex; justify-content: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; }
         
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
@@ -90,9 +95,11 @@
                 if (rowIndex === 0) {
                     container.innerHTML += `
                         <div class="box header-row">
-                            <div style="width: 50px;"></div> 
-                            <span>${titelText}</span>
-                            <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
+                            <div class="header-left"></div>
+                            <div class="header-center">${titelText}</div>
+                            <div class="header-right">
+                                <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
+                            </div>
                         </div>`;
                 } else {
                     for(let i = 1; i <= 5; i++) {
