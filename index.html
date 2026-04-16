@@ -51,19 +51,6 @@
 
         function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
 
-        function updateNavButtons() {
-            const dateVal = document.getElementById('datePicker').value;
-            if(!dateVal) return;
-            const selectedDate = new Date(dateVal);
-            selectedDate.setHours(12,0,0,0);
-            const today = new Date();
-            today.setHours(12,0,0,0);
-            const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
-            
-            document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
-            document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
-        }
-
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
             if (!dateVal) return;
@@ -71,8 +58,6 @@
             const container = document.getElementById('plan');
             container.innerHTML = ""; pendingChanges = [];
             
-            updateNavButtons();
-
             const dateObj = new Date(dateVal);
             dateObj.setHours(12,0,0,0);
             const heute = new Date(); heute.setHours(12,0,0,0);
@@ -82,7 +67,10 @@
 
             try {
                 const res = await fetch(`${url}?date=${dateVal}`);
-                const data = await res.json();
+                const responseData = await res.json();
+                const data = responseData.data;
+                const options = responseData.options;
+
                 const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 data.forEach((row, rowIndex) => {
                     if (rowIndex === 0) {
@@ -93,11 +81,13 @@
                         container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || ""; let teile = val.split(' | '); let klasse = teile[0]; let res = teile[1] || "";
-                            container.innerHTML += `<div class="box ${getFarbe(res)}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="window.addChange(this, '${row[0]}', ${i}, '${klasse}')"><option value="">---</option>${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}" ${res === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>`;
+                            let optionsHtml = `<option value="">---</option>`;
+                            options.forEach(opt => { optionsHtml += `<option value="${opt}" ${res === opt ? 'selected' : ''}>${opt}</option>`; });
+                            container.innerHTML += `<div class="box ${getFarbe(res)}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="window.addChange(this, '${row[0]}', ${i}, '${klasse}')">${optionsHtml}</select></div>`;
                         }
                     }
                 });
-            } catch (e) { console.error(e); container.innerHTML = `<div class="box info-box">Fehler beim Laden.</div>`; } finally { toggleLoader(false); }
+            } catch (e) { container.innerHTML = `<div class="box info-box">Fehler beim Laden.</div>`; } finally { toggleLoader(false); }
         }
 
         window.addChange = (el, time, slotIndex, klasse) => { 
