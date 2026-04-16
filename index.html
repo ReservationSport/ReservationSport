@@ -10,8 +10,17 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
-        /* Die neue Klasse für die verbundene Header-Zelle */
-        .header-row { grid-column: span 5; background: #222; font-size: 14px; font-weight: bold; cursor: default; }
+        /* Header-Zelle jetzt in #333 wie die Zeit-Boxen */
+        .header-row { 
+            grid-column: span 5; 
+            background: #333; 
+            font-size: 14px; 
+            font-weight: bold; 
+            cursor: default; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
         
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
@@ -62,7 +71,6 @@
             const container = document.getElementById('plan');
             container.innerHTML = "";
             
-            // Wochentag berechnen
             const dateObj = new Date(dateVal);
             const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
             const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
@@ -70,14 +78,11 @@
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
-                // Zeitspalte rendern
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
-                // Erste Zeile (Header) speziell behandeln
                 if (rowIndex === 0) {
                     container.innerHTML += `<div class="box header-row">${titelText}</div>`;
                 } else {
-                    // Datenspalten
                     for(let i = 1; i <= 5; i++) {
                         let val = row[i] || "";
                         let teile = val.split(' | ');
