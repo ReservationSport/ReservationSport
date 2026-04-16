@@ -36,7 +36,14 @@
         .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; font-size: 10px; transition: 0.3s; border-radius: 3px; }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
         
-        .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; }
+        .sport-loader { 
+            font-size: 20px; 
+            display: none; 
+            animation: bounce 0.6s infinite alternate;
+            /* FIX: Zwingt das Emoji auf PC und Handy in Schwarz-Weiß */
+            filter: grayscale(100%) brightness(1.5);
+            -webkit-filter: grayscale(100%) brightness(1.5);
+        }
         @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
     </style>
 </head>
