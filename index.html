@@ -30,20 +30,19 @@
         .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
 
-        /* --- NEUER SPORTLICHER LOADER (Springender Fußball) --- */
+        /* Sportlicher Loader (Hüpfender Fußball) */
         .sport-loader { 
-            font-size: 20px; /* Größe des Fußballs */
+            font-size: 20px; 
             position: absolute; 
-            right: 110px; /* Position links neben dem Button */
-            display: none; /* Standardmäßig unsichtbar */
-            animation: bounce 0.6s infinite alternate; /* Hüpf-Animation */
+            right: 120px; 
+            display: none; 
+            animation: bounce 0.6s infinite alternate; 
         }
 
-        /* Die Hüpf-Animation (simuliert Schwerkraft) */
         @keyframes bounce {
             0% { transform: translateY(0); animation-timing-function: ease-out; }
-            50% { transform: translateY(-15px) scaleX(1.05); animation-timing-function: ease-in; } /* Höchster Punkt, leicht gestaucht */
-            100% { transform: translateY(0) scaleX(0.95); } /* Aufprall, leicht breitgedrückt */
+            50% { transform: translateY(-15px) scaleX(1.05); animation-timing-function: ease-in; }
+            100% { transform: translateY(0) scaleX(0.95); }
         }
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
@@ -59,9 +58,10 @@
             font-size: 10px;
             transition: 0.3s;
             border-radius: 3px;
-            z-index: 10; /* Damit der Button über dem Ball bleibt falls nötig */
+            z-index: 10;
         }
         .save-btn.pending { background: #27ae60; border-color: #2ecc71; color: white; }
+        .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -83,10 +83,6 @@
         }
 
         async function loadPlan() {
-            // Zeige den Loader im Header (falls vorhanden)
-            const loader = document.getElementById('sport-loader-header');
-            if(loader) loader.style.display = 'block';
-            
             pendingChanges = [];
             const dateVal = document.getElementById('datePicker').value;
             const res = await fetch(`${url}?date=${dateVal}`);
@@ -131,8 +127,6 @@
                     }
                 }
             });
-            // Verstecke den Loader wieder
-            if(loader) loader.style.display = 'none';
         }
 
         function addChange(el, time, slotIndex, klasse) {
@@ -152,20 +146,20 @@
             const btn = document.getElementById('saveBtn');
             const loader = document.getElementById('sport-loader-header');
             
-            // Zeige den springenden Ball
+            btn.disabled = true;
+            btn.innerText = "Speichere...";
             if(loader) loader.style.display = 'block';
             
             await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
             
             pendingChanges = [];
-            // Verstecke den Ball
             if(loader) loader.style.display = 'none';
             
-            if(btn) {
-                btn.classList.remove('pending');
-                btn.innerText = "GESPEICHERT!";
-                setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
-            }
+            btn.classList.remove('pending');
+            btn.innerText = "GESPEICHERT!";
+            btn.disabled = false;
+            
+            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
         }
 
         document.getElementById('datePicker').valueAsDate = new Date();
