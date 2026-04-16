@@ -10,6 +10,9 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
+        /* Die neue Klasse für die verbundene Header-Zelle */
+        .header-row { grid-column: span 5; background: #222; font-size: 14px; font-weight: bold; cursor: default; }
+        
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         
@@ -52,28 +55,36 @@
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             
-            const date = document.getElementById('datePicker').value;
-            const res = await fetch(`${url}?date=${date}`);
+            const dateVal = document.getElementById('datePicker').value;
+            const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
             
             const container = document.getElementById('plan');
             container.innerHTML = "";
             
+            // Wochentag berechnen
+            const dateObj = new Date(dateVal);
+            const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+            const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
+            
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
+                // Zeitspalte rendern
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
-                for(let i = 1; i <= 5; i++) {
-                    let val = row[i] || "";
-                    let teile = val.split(' | ');
-                    let klasse = teile[0];
-                    let reservierung = teile[1] || "";
-                    let farbKlasse = getFarbe(reservierung);
-                    
-                    if (rowIndex === 0) {
-                        container.innerHTML += `<div class="box zeit-box"><div class="klasse">${klasse}</div></div>`;
-                    } else {
+                // Erste Zeile (Header) speziell behandeln
+                if (rowIndex === 0) {
+                    container.innerHTML += `<div class="box header-row">${titelText}</div>`;
+                } else {
+                    // Datenspalten
+                    for(let i = 1; i <= 5; i++) {
+                        let val = row[i] || "";
+                        let teile = val.split(' | ');
+                        let klasse = teile[0];
+                        let reservierung = teile[1] || "";
+                        let farbKlasse = getFarbe(reservierung);
+                        
                         container.innerHTML += `
                             <div class="box ${farbKlasse}">
                                 <div class="klasse">${klasse}</div>
@@ -92,31 +103,20 @@
         function addChange(el, time, slotIndex, klasse) {
             let res = el.value;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
-            
             el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
             el.parentElement.className = `box ${getFarbe(res)}`;
             el.style.opacity = '0';
-            
             pendingChanges.push({ time, slotIndex, val: speicherWert });
             document.getElementById('saveBtn').className = "pending";
         }
 
         async function saveChanges() {
             if (pendingChanges.length === 0) return;
-            
             document.getElementById('loader').style.display = 'block';
-            await fetch(url, { 
-                method: "POST", 
-                body: JSON.stringify({ 
-                    date: document.getElementById('datePicker').value, 
-                    changes: pendingChanges 
-                }) 
-            });
-            
+            await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             document.getElementById('loader').style.display = 'none';
-            
             const btn = document.getElementById('saveBtn');
             btn.innerText = "GESPEICHERT!";
             setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
