@@ -15,7 +15,7 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
-        .info-box { grid-column: span 6; padding: 50px 20px; text-align: center; color: #d1d1d1; font-style: italic; font-size: 18px; line-height: 1.5; background: #2a2a2a; border-radius: 8px; margin: 10px 0; }
+        .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
@@ -33,13 +33,13 @@
 <body>
     <div class="date-control">
         <div class="nav-group">
-            <button id="btnBack7" class="nav-btn">⏮</button>
-            <button id="btnBack1" class="nav-btn">◀</button>
+            <button id="btnBack7" class="nav-btn" onclick="changeDate(-7)">⏮</button>
+            <button id="btnBack1" class="nav-btn" onclick="changeDate(-1)">◀</button>
         </div>
         <input type="date" id="datePicker">
         <div class="nav-group">
-            <button id="btnFwd1" class="nav-btn">▶</button>
-            <button id="btnFwd7" class="nav-btn">⏭</button>
+            <button class="nav-btn" onclick="changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
         </div>
         <div id="globalLoader" class="global-loader"></div>
     </div>
@@ -50,32 +50,97 @@
         let pendingChanges = [];
         let configFarben = {};
 
+        function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
+
+        // KORREKTUR: Navigation steuern
+        function updateNavButtons() {
+            const dateVal = document.getElementById('datePicker').value;
+            if(!dateVal) return;
+            const selectedDate = new Date(dateVal); selectedDate.setHours(12,0,0,0);
+            const today = new Date(); today.setHours(12,0,0,0);
+            const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
+            document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
+        }
+
+        async function loadPlan() {
+            const dateVal = document.getElementById('datePicker').value;
+            if (!dateVal) return;
+            toggleLoader(true);
+            updateNavButtons(); // KORREKTUR: Hier wird die Sichtbarkeit jetzt jedes Mal neu berechnet
+            
+            const container = document.getElementById('plan');
+            container.innerHTML = ""; pendingChanges = [];
+
+            try {
+                const res = await fetch(`${url}?date=${dateVal}`);
+                const text = await res.text();
+                const json = JSON.parse(text);
+                
+                if (json.info === "zukunft_zu_weit") {
+                    container.innerHTML = `<div class="box info-box">Die Zukunft ist noch nicht bereit für deine Pläne! Sei geduldig...</div>`;
+                    toggleLoader(false); return;
+                }
+                const heute = new Date(); heute.setHours(12,0,0,0);
+                const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
+                
+                if (dateObj < heute) { container.innerHTML = `<div class="box info-box">Lebst du in der Vergangenheit? Lass uns nach vorne schauen!</div>`; toggleLoader(false); return; }
+                if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { container.innerHTML = `<div class="box info-box">Mach mal Pause! Es ist Wochenende...</div>`; toggleLoader(false); return; }
+
+                const data = json.data;
+                const options = json.options;
+                configFarben = {};
+                options.forEach(opt => configFarben[opt[0]] = opt[1]);
+
+                const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+                data.forEach((row, rowIndex) => {
+                    if (rowIndex === 0) {
+                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">⚽</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
+                    } else {
+                        if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
+                        if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
+                        container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                        for(let i = 1; i <= 5; i++) {
+                            let val = row[i] || ""; let teile = val.split(' | '); let klasse = teile[0]; let res = teile[1] || "";
+                            container.innerHTML += `<div class="box" style="background-color: ${configFarben[res] || ''}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')"><option value="">---</option>${options.map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}</select></div>`;
+                        }
+                    }
+                });
+            } catch(e) { container.innerHTML = "Fehler bei der Kommunikation mit dem Server."; }
+            toggleLoader(false);
+        }
+
         window.addChange = (el, time, slotIndex, klasse) => { 
             let res = el.value; 
             el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res; 
             el.parentElement.style.backgroundColor = configFarben[res] || ""; 
             pendingChanges.push({ time, slotIndex, val: (res === "" || res === "---") ? klasse : klasse + " | " + res }); 
             const btn = document.getElementById('saveBtn');
-            if(btn) {
-                btn.style.display = 'block';
-                btn.classList.remove('success');
-                btn.innerText = "SPEICHERN";
-            }
+            btn.style.display = 'block';
+            btn.classList.remove('success');
+            btn.innerText = "SPEICHERN";
         };
 
         window.saveChanges = async () => { 
             const btn = document.getElementById('saveBtn'), ball = document.getElementById('sport-loader'); 
-            if(!btn || !ball) return;
             btn.style.display = 'none'; 
             ball.classList.add('active');
+            
             try {
                 await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) }); 
                 pendingChanges = []; 
                 ball.classList.remove('active'); 
+                
                 btn.innerText = "Gespeichert!";
                 btn.classList.add('success');
                 btn.style.display = 'block';
-                setTimeout(() => { btn.style.display = 'none'; btn.classList.remove('success'); btn.innerText = "SPEICHERN"; }, 1500);
+                
+                setTimeout(() => {
+                    btn.style.display = 'none';
+                    btn.classList.remove('success');
+                    btn.innerText = "SPEICHERN";
+                }, 1500);
             } catch (e) {
                 ball.classList.remove('active');
                 btn.style.display = 'block';
@@ -84,70 +149,12 @@
             }
         };
 
-        window.loadPlan = async () => {
-            const dateVal = document.getElementById('datePicker').value;
-            if (!dateVal) return;
-            document.getElementById('globalLoader').style.display = 'block';
-            
-            const container = document.getElementById('plan');
-            container.innerHTML = ""; 
-            
-            try {
-                const res = await fetch(`${url}?date=${dateVal}`);
-                const json = await res.json();
-                
-                // Navigation updaten
-                const selectedDate = new Date(dateVal); selectedDate.setHours(12,0,0,0);
-                const today = new Date(); today.setHours(12,0,0,0);
-                const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
-                document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
-                document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
-
-                if (json.info === "zukunft_zu_weit") {
-                    container.innerHTML = `<div class="box info-box">Die Zukunft ist noch nicht bereit für deine Pläne! Sei geduldig...</div>`;
-                } else if (selectedDate < today) {
-                    container.innerHTML = `<div class="box info-box">Lebst du in der Vergangenheit? Lass uns nach vorne schauen!</div>`;
-                } else if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
-                    container.innerHTML = `<div class="box info-box">Mach mal Pause! Es ist Wochenende...</div>`;
-                } else {
-                    configFarben = {};
-                    json.options.forEach(opt => configFarben[opt[0]] = opt[1]);
-                    const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-                    
-                    json.data.forEach((row, rowIndex) => {
-                        if (rowIndex === 0) {
-                            container.innerHTML += `<div class="box header-row"><span>${wochentage[selectedDate.getDay()]}, ${selectedDate.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">⚽</div><button id="saveBtn" class="save-btn">SPEICHERN</button></div></div>`;
-                            document.getElementById('saveBtn').addEventListener('click', window.saveChanges);
-                        } else {
-                            if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
-                            if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
-                            container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
-                            for(let i = 1; i <= 5; i++) {
-                                let val = row[i] || ""; let teile = val.split(' | '); let klasse = teile[0]; let res = teile[1] || "";
-                                let cell = document.createElement('div');
-                                cell.className = 'box';
-                                cell.style.backgroundColor = configFarben[res] || '';
-                                cell.innerHTML = `<div class="klasse">${klasse}</div><div class="res">${res}</div><select><option value="">---</option>${json.options.map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}</select>`;
-                                cell.querySelector('select').addEventListener('change', (e) => window.addChange(e.target, row[0], i, klasse));
-                                container.appendChild(cell);
-                            }
-                        }
-                    });
-                }
-            } catch(e) { container.innerHTML = "Fehler beim Laden."; }
-            document.getElementById('globalLoader').style.display = 'none';
-        };
+        window.changeDate = (days) => { const dp = document.getElementById('datePicker'); let d = new Date(dp.value); d.setDate(d.getDate() + days); dp.valueAsDate = d; loadPlan(); };
 
         document.addEventListener('DOMContentLoaded', () => { 
-            document.getElementById('btnBack7').addEventListener('click', () => { const d = new Date(document.getElementById('datePicker').value); d.setDate(d.getDate() - 7); document.getElementById('datePicker').valueAsDate = d; window.loadPlan(); });
-            document.getElementById('btnBack1').addEventListener('click', () => { const d = new Date(document.getElementById('datePicker').value); d.setDate(d.getDate() - 1); document.getElementById('datePicker').valueAsDate = d; window.loadPlan(); });
-            document.getElementById('btnFwd1').addEventListener('click', () => { const d = new Date(document.getElementById('datePicker').value); d.setDate(d.getDate() + 1); document.getElementById('datePicker').valueAsDate = d; window.loadPlan(); });
-            document.getElementById('btnFwd7').addEventListener('click', () => { const d = new Date(document.getElementById('datePicker').value); d.setDate(d.getDate() + 7); document.getElementById('datePicker').valueAsDate = d; window.loadPlan(); });
-            
             const today = new Date(); const offset = today.getTimezoneOffset(); today.setMinutes(today.getMinutes() - offset);
             document.getElementById('datePicker').value = today.toISOString().split('T')[0];
-            window.loadPlan(); 
-            document.getElementById('datePicker').addEventListener('change', window.loadPlan);
+            loadPlan(); document.getElementById('datePicker').addEventListener('change', loadPlan);
         });
     </script>
 </body>
