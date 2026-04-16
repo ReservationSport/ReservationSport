@@ -10,22 +10,6 @@
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; }
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
-        /* Absolute Positionierung: Buttons schweben, stören Layout nicht */
-        .header-row { 
-            grid-column: span 5; 
-            background: #222; 
-            font-size: 14px; 
-            font-weight: bold; 
-            cursor: default; 
-            position: relative; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .nav-btn-left { position: absolute; left: 10px; cursor: pointer; background: #333; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; z-index: 10; }
-        .nav-btn-right { position: absolute; right: 10px; cursor: pointer; background: #333; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; z-index: 10; }
-        .nav-btn-left:hover, .nav-btn-right:hover { background: #444; }
-        
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         
@@ -45,7 +29,7 @@
 </head>
 <body>
     <div style="text-align: center; margin-bottom: 20px;">
-        <input type="date" id="datePicker" onchange="loadPlan()" style="display: none;">
+        <input type="date" id="datePicker" onchange="loadPlan()" style="padding: 10px; background: #333; color: white; border: 1px solid #444;">
         <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         <div id="loader" class="loader"></div>
     </div>
@@ -54,13 +38,6 @@
     <script>
         const url = "https://script.google.com/macros/s/AKfycbzfB81kQO3eJy06b3O6-tFRHIH2S98p6C68mdpIxeLiw5cT56TlEQ6G83QNpI8dgw0v4A/exec";
         let pendingChanges = [];
-
-        function changeDate(offset) {
-            let d = new Date(document.getElementById('datePicker').value);
-            d.setDate(d.getDate() + offset);
-            document.getElementById('datePicker').valueAsDate = d;
-            loadPlan();
-        }
 
         function getFarbe(res) {
             if (res.includes("Halle 1")) return "bg-red";
@@ -75,33 +52,78 @@
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             
-            const dateVal = document.getElementById('datePicker').value;
-            const res = await fetch(`${url}?date=${dateVal}`);
+            const date = document.getElementById('datePicker').value;
+            const res = await fetch(`${url}?date=${date}`);
             const data = await res.json();
             
             const container = document.getElementById('plan');
             container.innerHTML = "";
-            
-            const dateObj = new Date(dateVal);
-            const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-            const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
             
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                 
-                if (rowIndex === 0) {
-                    container.innerHTML += `
-                        <div class="box header-row">
-                            <span class="nav-btn-left" onclick="changeDate(-1)">◀</span>
-                            <span>${titelText}</span>
-                            <span class="nav-btn-right" onclick="changeDate(1)">▶</span>
-                        </div>`;
-                } else {
-                    for(let i = 1; i <= 5; i++) {
-                        let val = row[i] || "";
-                        let teile = val.split(' | ');
-                        let klasse = teile[0];
-                        let reservierung = teile[1] || "";
-                        let farbKlasse = getFarbe(reservierung);
+                for(let i = 1; i <= 5; i++) {
+                    let val = row[i] || "";
+                    let teile = val.split(' | ');
+                    let klasse = teile[0];
+                    let reservierung = teile[1] || "";
+                    let farbKlasse = getFarbe(reservierung);
+                    
+                    if (rowIndex === 0) {
+                        container.innerHTML += `<div class="box zeit-box"><div class="klasse">${klasse}</div></div>`;
+                    } else {
+                        container.innerHTML += `
+                            <div class="box ${farbKlasse}">
+                                <div class="klasse">${klasse}</div>
+                                <div class="res">${reservierung}</div>
+                                <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')">
+                                    <option value="">---</option>
+                                    ${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}">${r}</option>`).join('')}
+                                </select>
+                            </div>`;
+                    }
+                }
+            });
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        function addChange(el, time, slotIndex, klasse) {
+            let res = el.value;
+            let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
+            
+            el.parentElement.querySelector('.res').innerText = (res === "" || res === "---") ? "" : res;
+            el.parentElement.className = `box ${getFarbe(res)}`;
+            el.style.opacity = '0';
+            
+            pendingChanges.push({ time, slotIndex, val: speicherWert });
+            document.getElementById('saveBtn').className = "pending";
+        }
+
+        async function saveChanges() {
+            if (pendingChanges.length === 0) return;
+            
+            document.getElementById('loader').style.display = 'block';
+            await fetch(url, { 
+                method: "POST", 
+                body: JSON.stringify({ 
+                    date: document.getElementById('datePicker').value, 
+                    changes: pendingChanges 
+                }) 
+            });
+            
+            pendingChanges = [];
+            document.getElementById('saveBtn').className = "";
+            document.getElementById('loader').style.display = 'none';
+            
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "GESPEICHERT!";
+            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
+        }
+
+        document.getElementById('datePicker').valueAsDate = new Date();
+        loadPlan();
+    </script>
+</body>
+</html>
