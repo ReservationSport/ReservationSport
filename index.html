@@ -30,7 +30,8 @@
         .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
 
-        .loader { border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
+        /* Kompakter Spinner */
+        .loader { border: 3px solid #444; border-top: 3px solid #27ae60; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: none; position: absolute; right: 100px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
@@ -53,7 +54,6 @@
 <body>
     <div style="text-align: center; margin-bottom: 20px;">
         <input type="date" id="datePicker" onchange="loadPlan()" style="padding: 10px; background: #333; color: white; border: 1px solid #444; margin-bottom: 10px;">
-        <div id="loader" class="loader"></div>
     </div>
     <div class="grid" id="plan"></div>
 
@@ -70,9 +70,10 @@
         }
 
         async function loadPlan() {
-            document.getElementById('loader').style.display = 'block';
-            pendingChanges = [];
+            const loader = document.getElementById('loader-header');
+            if(loader) loader.style.display = 'block';
             
+            pendingChanges = [];
             const dateVal = document.getElementById('datePicker').value;
             const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
@@ -93,6 +94,7 @@
                     container.innerHTML += `
                         <div class="box header-row">
                             <span>${titelText}</span>
+                            <div id="loader-header" class="loader"></div>
                             <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
                         </div>`;
                 } else {
@@ -115,7 +117,7 @@
                     }
                 }
             });
-            document.getElementById('loader').style.display = 'none';
+            if(loader) loader.style.display = 'none';
         }
 
         function addChange(el, time, slotIndex, klasse) {
@@ -133,17 +135,18 @@
         async function saveChanges() {
             if (pendingChanges.length === 0) return;
             const btn = document.getElementById('saveBtn');
+            const loader = document.getElementById('loader-header');
             
-            document.getElementById('loader').style.display = 'block';
+            loader.style.display = 'block';
             await fetch(url, { method: "POST", body: JSON.stringify({ date: document.getElementById('datePicker').value, changes: pendingChanges }) });
             
             pendingChanges = [];
+            loader.style.display = 'none';
             if(btn) {
                 btn.classList.remove('pending');
                 btn.innerText = "GESPEICHERT!";
                 setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
             }
-            document.getElementById('loader').style.display = 'none';
         }
 
         document.getElementById('datePicker').valueAsDate = new Date();
