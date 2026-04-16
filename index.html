@@ -22,6 +22,9 @@
             justify-content: center;
         }
         
+        /* Box für Wochenend-Hinweis */
+        .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
+        
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; }
         
@@ -30,7 +33,6 @@
         .bg-purple { background: #8e44ad !important; }
         .bg-yellow { background: #f1c40f !important; color: black !important; }
 
-        /* Sportlicher Loader (Hüpfender Fußball) */
         .sport-loader { 
             font-size: 20px; 
             position: absolute; 
@@ -83,15 +85,21 @@
         }
 
         async function loadPlan() {
-            pendingChanges = [];
             const dateVal = document.getElementById('datePicker').value;
+            const dateObj = new Date(dateVal);
+            const container = document.getElementById('plan');
+            container.innerHTML = "";
+            pendingChanges = [];
+
+            // Prüfung auf Wochenende (0 = Sonntag, 6 = Samstag)
+            if (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
+                container.innerHTML = `<div class="box info-box">Kein Unterricht am Wochenende.</div>`;
+                return;
+            }
+
             const res = await fetch(`${url}?date=${dateVal}`);
             const data = await res.json();
             
-            const container = document.getElementById('plan');
-            container.innerHTML = "";
-            
-            const dateObj = new Date(dateVal);
             const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
             const titelText = `${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}`;
             
