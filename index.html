@@ -50,46 +50,33 @@
 
         function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
 
-        function updateNavButtons() {
-            const dateVal = document.getElementById('datePicker').value;
-            if(!dateVal) return;
-            const selectedDate = new Date(dateVal); selectedDate.setHours(12,0,0,0);
-            const today = new Date(); today.setHours(12,0,0,0);
-            const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
-            document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
-            document.getElementById('btnBack7').style.visibility = (diffDays >= 7) ? 'visible' : 'hidden';
-        }
-
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
             if (!dateVal) return;
             toggleLoader(true);
             const container = document.getElementById('plan');
             container.innerHTML = ""; pendingChanges = [];
-            updateNavButtons();
 
             try {
                 const res = await fetch(`${url}?date=${dateVal}`);
                 const text = await res.text();
                 const json = JSON.parse(text);
                 
-                if (json.error) {
-                    container.innerHTML = `<div class="box info-box">Fehler: ${json.error}</div>`;
+                // Hier kontrollieren wir alle Meldungen zentral
+                if (json.info === "zukunft_zu_weit") {
+                    container.innerHTML = `<div class="box info-box">Die Zukunft ist noch nicht bereit für deine Pläne! Sei geduldig...</div>`;
                     toggleLoader(false); return;
                 }
+                const heute = new Date(); heute.setHours(12,0,0,0);
+                const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
+                
+                if (dateObj < heute) { container.innerHTML = `<div class="box info-box">Lebst du in der Vergangenheit? Lass uns nach vorne schauen!</div>`; toggleLoader(false); return; }
+                if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { container.innerHTML = `<div class="box info-box">Wochenende! Der Hallenplan gönnt sich eine wohlverdiente Pause.</div>`; toggleLoader(false); return; }
 
                 const data = json.data;
                 const options = json.options;
                 configFarben = {};
                 options.forEach(opt => configFarben[opt[0]] = opt[1]);
-
-                const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
-                const heute = new Date(); heute.setHours(12,0,0,0);
-                const limitDate = new Date(); limitDate.setDate(heute.getDate() + 28); limitDate.setHours(12,0,0,0);
-                
-                if (dateObj < heute) { container.innerHTML = `<div class="box info-box">Lebst du in der Vergangenheit? Lass uns nach vorne schauen!</div>`; toggleLoader(false); return; }
-                if (dateObj > limitDate) { container.innerHTML = `<div class="box info-box">Die Zukunft ist noch nicht bereit für deine Pläne! Sei geduldig...</div>`; toggleLoader(false); return; }
-                if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { container.innerHTML = `<div class="box info-box">Mach mal Pause! Es ist Wochenende...</div>`; toggleLoader(false); return; }
 
                 const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 data.forEach((row, rowIndex) => {
@@ -105,10 +92,7 @@
                         }
                     }
                 });
-            } catch(e) {
-                console.error(e);
-                document.getElementById('plan').innerHTML = "Fehler bei der Kommunikation mit dem Server.";
-            }
+            } catch(e) { container.innerHTML = "Fehler bei der Kommunikation mit dem Server."; }
             toggleLoader(false);
         }
 
