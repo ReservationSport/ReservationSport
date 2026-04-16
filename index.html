@@ -11,7 +11,17 @@
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
         
         /* Header-Design mit Navigations-Buttons */
-        .header-row { grid-column: span 5; background: #222; font-size: 14px; font-weight: bold; cursor: default; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; }
+        .header-row { 
+            grid-column: span 5; 
+            background: #222; 
+            font-size: 14px; 
+            font-weight: bold; 
+            cursor: default; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 0 10px; 
+        }
         .nav-btn { cursor: pointer; background: #333; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; color: white; user-select: none; }
         .nav-btn:hover { background: #444; }
         
@@ -34,7 +44,7 @@
 </head>
 <body>
     <div style="text-align: center; margin-bottom: 20px;">
-        <input type="date" id="datePicker" onchange="loadPlan()" style="padding: 10px; background: #333; color: white; border: 1px solid #444; display: none;">
+        <input type="date" id="datePicker" onchange="loadPlan()" style="display: none;">
         <button id="saveBtn" onclick="saveChanges()">SPEICHERN</button>
         <div id="loader" class="loader"></div>
     </div>
@@ -51,7 +61,6 @@
             loadPlan();
         }
 
-        // ... (getFarbe bleibt gleich)
         function getFarbe(res) {
             if (res.includes("Halle 1")) return "bg-red";
             if (res.includes("Halle 4")) return "bg-blue";
@@ -111,7 +120,6 @@
             document.getElementById('loader').style.display = 'none';
         }
 
-        // ... (addChange und saveChanges bleiben identisch)
         function addChange(el, time, slotIndex, klasse) {
             let res = el.value;
             let speicherWert = (res === "" || res === "---") ? klasse : klasse + " | " + res;
