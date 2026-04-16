@@ -6,14 +6,21 @@
     <style>
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
-        .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
+        .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; }
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; }
         .zeit-box { background: #333; font-weight: bold; }
-        .header-row { grid-column: span 6; background: #333; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .save-btn { padding: 5px 15px; background: #444; color: white; cursor: pointer; }
+        .header-row { grid-column: span 6; background: #333; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; }
+        .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; }
+        .save-btn { padding: 5px 15px; background: #444; border: 1px solid #666; color: white; cursor: pointer; border-radius: 3px; }
+        .save-btn.pending { background: #27ae60; }
+        .sport-loader { font-size: 20px; display: none; animation: bounce 0.6s infinite alternate; margin-right: 10px; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; }
-        .res { font-style: italic; margin-top: 2px; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; }
+        .klasse { font-weight: bold; }
     </style>
 </head>
 <body>
@@ -21,6 +28,7 @@
         <button class="nav-btn" onclick="window.changeDate(-1)">◀</button>
         <input type="date" id="datePicker">
         <button class="nav-btn" onclick="window.changeDate(1)">▶</button>
+        <div id="globalLoader" class="global-loader"></div>
     </div>
     <div class="grid" id="plan"></div>
 
@@ -29,13 +37,13 @@
         let pendingChanges = [];
 
         function getTextColor(bgColor) {
-            const helleFarben = ["khaki", "lightskyblue", "white", "silver", "yellow"];
-            return helleFarben.includes(bgColor.toLowerCase()) ? "black" : "white";
+            const hell = ["khaki", "lightskyblue", "white", "silver", "yellow"];
+            return hell.includes(bgColor.toLowerCase()) ? "black" : "white";
         }
 
         async function loadPlan() {
             const dateVal = document.getElementById('datePicker').value;
-            if(!dateVal) return;
+            document.getElementById('globalLoader').style.display = 'block';
             const res = await fetch(`${url}?date=${dateVal}`);
             const {data, options} = await res.json();
             const farbMap = {};
@@ -46,16 +54,26 @@
             
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 0) {
-                    container.innerHTML += `<div class="box header-row"><span>${dateVal}</span><button id="saveBtn" class="save-btn" onclick="window.saveChanges()">SPEICHERN</button></div>`;
+                    container.innerHTML += `<div class="box header-row"><span>${dateVal}</span>
+                        <div class="save-container">
+                            <div id="sport-loader" class="sport-loader">⚽</div>
+                            <button id="saveBtn" class="save-btn" onclick="window.saveChanges()">SPEICHERN</button>
+                        </div></div>`;
                 } else {
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                     for(let i = 1; i <= 5; i++) {
                         let [klasse, resName] = (row[i] || "").split(' | ');
                         let color = farbMap[resName] || "#262626";
-                        container.innerHTML += `<div class="box" style="background-color:${color}; color:${getTextColor(color)}"><div class="klasse">${klasse||''}</div><div class="res">${resName||''}</div><select onchange="window.updateStyle(this, '${row[0]}', ${i}, '${klasse}', '${JSON.stringify(farbMap).replace(/"/g, '&quot;')}')"><option value="">---</option>${options.map(o => `<option value="${o[0]}" ${resName===o[0]?'selected':''}>${o[0]}</option>`).join('')}</select></div>`;
+                        container.innerHTML += `<div class="box" style="background-color:${color}; color:${getTextColor(color)}">
+                            <div class="klasse">${klasse||''}</div><div class="res">${resName||''}</div>
+                            <select onchange="window.updateStyle(this, '${row[0]}', ${i}, '${klasse}', '${JSON.stringify(farbMap).replace(/"/g, '&quot;')}')">
+                                <option value="">---</option>${options.map(o => `<option value="${o[0]}" ${resName===o[0]?'selected':''}>${o[0]}</option>`).join('')}
+                            </select>
+                        </div>`;
                     }
                 }
             });
+            document.getElementById('globalLoader').style.display = 'none';
         }
 
         window.updateStyle = (el, time, slotIndex, klasse, farbMapStr) => {
@@ -66,11 +84,15 @@
             el.parentElement.style.color = getTextColor(color);
             el.parentElement.querySelector('.res').innerText = (res === "") ? "" : res;
             pendingChanges.push({time, slotIndex, val: klasse + (res ? " | " + res : "")});
+            document.getElementById('saveBtn').classList.add('pending');
         };
 
         window.saveChanges = async () => {
+            const btn = document.getElementById('saveBtn'), ball = document.getElementById('sport-loader');
+            btn.style.display = 'none'; ball.style.display = 'block';
             await fetch(url, {method: "POST", body: JSON.stringify({date: document.getElementById('datePicker').value, changes: pendingChanges})});
-            pendingChanges = []; alert("Erfolgreich gespeichert!");
+            pendingChanges = []; ball.style.display = 'none'; btn.style.display = 'block'; btn.classList.remove('pending'); btn.innerText = "GESPEICHERT!";
+            setTimeout(() => btn.innerText = "SPEICHERN", 2000);
         };
 
         window.changeDate = (d) => { 
