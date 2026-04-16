@@ -33,13 +33,13 @@
 <body>
     <div class="date-control">
         <div class="nav-group">
-            <button id="btnBack7" class="nav-btn" onclick="changeDate(-7)">⏮</button>
-            <button id="btnBack1" class="nav-btn" onclick="changeDate(-1)">◀</button>
+            <button id="btnBack7" class="nav-btn" onclick="window.changeDate(-7)">⏮</button>
+            <button id="btnBack1" class="nav-btn" onclick="window.changeDate(-1)">◀</button>
         </div>
         <input type="date" id="datePicker">
         <div class="nav-group">
-            <button class="nav-btn" style="visibility: visible;" onclick="changeDate(1)">▶</button>
-            <button class="nav-btn" style="visibility: visible;" onclick="changeDate(7)">⏭</button>
+            <button class="nav-btn" style="visibility: visible;" onclick="window.changeDate(1)">▶</button>
+            <button class="nav-btn" style="visibility: visible;" onclick="window.changeDate(7)">⏭</button>
         </div>
         <div id="globalLoader" class="global-loader"></div>
     </div>
@@ -55,10 +55,9 @@
             const dateVal = document.getElementById('datePicker').value;
             if(!dateVal) return;
             const selectedDate = new Date(dateVal);
-            selectedDate.setHours(12,0,0,0); // Sicherstellen, dass wir mitten am Tag sind
+            selectedDate.setHours(12,0,0,0);
             const today = new Date();
             today.setHours(12,0,0,0);
-            
             const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
             
             document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
@@ -87,18 +86,18 @@
                 const wochentage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 data.forEach((row, rowIndex) => {
                     if (rowIndex === 0) {
-                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">⚽</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
+                        container.innerHTML += `<div class="box header-row"><span>${wochentage[dateObj.getDay()]}, ${dateObj.toLocaleDateString('de-DE')}</span><div class="save-container"><div id="sport-loader" class="sport-loader">⚽</div><button id="saveBtn" class="save-btn" onclick="window.saveChanges()">SPEICHERN</button></div></div>`;
                     } else {
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
                         container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || ""; let teile = val.split(' | '); let klasse = teile[0]; let res = teile[1] || "";
-                            container.innerHTML += `<div class="box ${getFarbe(res)}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}')"><option value="">---</option>${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}" ${res === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>`;
+                            container.innerHTML += `<div class="box ${getFarbe(res)}"><div class="klasse">${klasse}</div><div class="res">${res}</div><select onchange="window.addChange(this, '${row[0]}', ${i}, '${klasse}')"><option value="">---</option>${["Halle 1", "Halle 2", "Halle 3", "Halle 4", "U21", "Kletterwand"].map(r => `<option value="${r}" ${res === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>`;
                         }
                     }
                 });
-            } catch (e) { container.innerHTML = `<div class="box info-box">Fehler beim Laden.</div>`; } finally { toggleLoader(false); }
+            } catch (e) { console.error(e); container.innerHTML = `<div class="box info-box">Fehler beim Laden.</div>`; } finally { toggleLoader(false); }
         }
 
         window.addChange = (el, time, slotIndex, klasse) => { 
@@ -135,12 +134,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => { 
-            // Datum korrekt setzen (lokal)
             const today = new Date();
             const offset = today.getTimezoneOffset();
             today.setMinutes(today.getMinutes() - offset);
             document.getElementById('datePicker').value = today.toISOString().split('T')[0];
-            
             loadPlan(); 
             document.getElementById('datePicker').addEventListener('change', loadPlan);
         });
