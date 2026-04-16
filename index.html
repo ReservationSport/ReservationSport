@@ -60,7 +60,7 @@
             container.innerHTML = "";
             
             data.forEach((row, rowIndex) => {
-                // Trennlinie eine Stufe tiefer (nach Index 7)
+                // Trennlinie nach Index 7
                 if (rowIndex === 7) container.innerHTML += `<div style="grid-column: 1 / span 6; height: 4px; background: #3498db; margin: 5px 0;"></div>`;
                 
                 container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
@@ -72,7 +72,6 @@
                     let reservierung = teile[1] || "";
                     let farbKlasse = getFarbe(reservierung);
                     
-                    // Header-Zeile (rowIndex 0) ist starr, Rest ist bearbeitbar
                     if (rowIndex === 0) {
                         container.innerHTML += `<div class="box zeit-box"><div class="klasse">${klasse}</div></div>`;
                     } else {
@@ -107,6 +106,8 @@
             if (pendingChanges.length === 0) return;
             
             document.getElementById('loader').style.display = 'block';
+            
+            // Senden im Hintergrund
             await fetch(url, { 
                 method: "POST", 
                 body: JSON.stringify({ 
@@ -118,7 +119,11 @@
             pendingChanges = [];
             document.getElementById('saveBtn').className = "";
             document.getElementById('loader').style.display = 'none';
-            alert("Erfolgreich gespeichert!");
+            
+            // Visuelles Feedback ohne Refresh
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "GESPEICHERT!";
+            setTimeout(() => { btn.innerText = "SPEICHERN"; }, 2000);
         }
 
         document.getElementById('datePicker').valueAsDate = new Date();
