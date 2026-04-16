@@ -52,8 +52,13 @@
         function toggleLoader(show) { document.getElementById('globalLoader').style.display = show ? 'block' : 'none'; }
 
         function updateNavButtons() {
-            const selectedDate = new Date(document.getElementById('datePicker').value);
-            const today = new Date(); today.setHours(0,0,0,0);
+            const dateVal = document.getElementById('datePicker').value;
+            if(!dateVal) return;
+            const selectedDate = new Date(dateVal);
+            selectedDate.setHours(12,0,0,0); // Sicherstellen, dass wir mitten am Tag sind
+            const today = new Date();
+            today.setHours(12,0,0,0);
+            
             const diffDays = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
             
             document.getElementById('btnBack1').style.visibility = (diffDays > 0) ? 'visible' : 'hidden';
@@ -70,7 +75,8 @@
             updateNavButtons();
 
             const dateObj = new Date(dateVal);
-            const heute = new Date(); heute.setHours(0,0,0,0);
+            dateObj.setHours(12,0,0,0);
+            const heute = new Date(); heute.setHours(12,0,0,0);
             
             if (dateObj < heute) { container.innerHTML = `<div class="box info-box">Vergangene Tage nicht bearbeitbar.</div>`; toggleLoader(false); return; }
             if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { container.innerHTML = `<div class="box info-box">Wochenende.</div>`; toggleLoader(false); return; }
@@ -129,7 +135,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => { 
-            document.getElementById('datePicker').valueAsDate = new Date(); 
+            // Datum korrekt setzen (lokal)
+            const today = new Date();
+            const offset = today.getTimezoneOffset();
+            today.setMinutes(today.getMinutes() - offset);
+            document.getElementById('datePicker').value = today.toISOString().split('T')[0];
+            
             loadPlan(); 
             document.getElementById('datePicker').addEventListener('change', loadPlan);
         });
