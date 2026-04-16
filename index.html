@@ -1,49 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* Login Overlay Style */
-        #loginOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #f4f4f9; z-index: 9999; text-align: center; padding-top: 20%;
-        }
-        /* Dein restliches CSS kommt hier hin */
-        .box { border: 1px solid #ddd; padding: 10px; margin: 5px; }
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; text-align:center; padding-top:20%; }
+        #app { display:none; }
+        .grid-box { border:1px solid #ccc; padding:10px; margin:2px; display:inline-block; }
     </style>
 </head>
 <body>
 
     <div id="loginOverlay">
-        <h3>Login</h3>
-        <p>Passwort</p>
-        <input type="text" id="kuerzel" maxlength="8" style="text-transform:uppercase; text-align:center; font-size:20px; width:60px;">
-        <br><br>
-        <button onclick="doLogin()">Anmelden</button>
+        <h3>Login mit Kürzel</h3>
+        <input type="text" id="kuerzel" maxlength="2">
+        <button onclick="login()">Anmelden</button>
     </div>
 
     <div id="app">
-        </div>
+        <div id="plan"></div>
+        <button id="saveBtn" style="display:none;" onclick="save()">Speichern</button>
+    </div>
 
     <script>
-        // LOGIN-FUNKTION
-        function doLogin() {
-            var kuerzel = document.getElementById('kuerzel').value;
-            if (kuerzel.length < 2) { alert("Bitte 2-stelliges Kürzel eingeben"); return; }
-            
-            google.script.run.withSuccessHandler(function(isValid) {
-                if (isValid) {
+        var changes = [];
+
+        function login() {
+            var k = document.getElementById('kuerzel').value;
+            google.script.run.withSuccessHandler(function(ok) {
+                if(ok) {
                     document.getElementById('loginOverlay').style.display = 'none';
-                    // Hier ggf. deinen Plan laden
-                    // loadPlan(); 
-                } else {
-                    alert("Kürzel ungültig!");
-                }
-            }).checkLogin(kuerzel);
+                    document.getElementById('app').style.display = 'block';
+                    load();
+                } else { alert("Falsches Kürzel"); }
+            }).checkLogin(k);
         }
 
-        // DEINE BESTEHENDEN FUNKTIONEN (addChange, loadPlan etc.)
-        // ...
+        function load() {
+            google.script.run.withSuccessHandler(function(data) {
+                var html = "";
+                data.forEach((row, rowIndex) => {
+                    row.forEach((cell, colIndex) => {
+                        html += `<input class="grid-box" value="${cell}" onchange="addChange(this, ${rowIndex+1}, ${colIndex+1})">`;
+                    });
+                    html += "<br>";
+                });
+                document.getElementById('plan').innerHTML = html;
+            }).getPlanData();
+        }
+
+        function addChange(el, row, col) {
+            changes.push({row: row, col: col, val: el.value});
+            document.getElementById('saveBtn').style.display = 'block';
+        }
+
+        function save() {
+            google.script.run.withSuccessHandler(() => {
+                alert("Gespeichert");
+                changes = [];
+                document.getElementById('saveBtn').style.display = 'none';
+            }).savePlan(changes);
+        }
     </script>
 </body>
 </html>
