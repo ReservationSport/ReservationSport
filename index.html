@@ -31,22 +31,9 @@
         .box.ausfall-mode { background-color: #000000 !important; color: #777777 !important; background-image: linear-gradient(to top right, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)), linear-gradient(to top left, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)); }
         .box.ausfall-mode .klasse { color: #777777; }
         .box.ausfall-mode .res { color: #555555; }
-        .box.ausfall-mode .lehrer-info { display: none; } /* Lehrer bei Ausfall ausblenden */
+        .box.ausfall-mode .lehrer-info { display: none; }
 
-        .stift { 
-            position: absolute; 
-            top: 2px;          
-            right: 4px;          
-            z-index: 50; 
-            color: #e67e22; 
-            cursor: pointer; 
-            pointer-events: auto; 
-            display: inline-block; 
-            font-size: 22px;    
-            line-height: 1;     
-            text-shadow: 0 0 5px rgba(0,0,0,1); 
-            transition: transform 0.2s ease;
-        }
+        .stift { position: absolute; top: 2px; right: 4px; z-index: 50; color: #e67e22; cursor: pointer; pointer-events: auto; display: inline-block; font-size: 22px; line-height: 1; text-shadow: 0 0 5px rgba(0,0,0,1); transition: transform 0.2s ease; }
         .stift:hover { transform: scale(1.2); color: #ff9f43; }
 
         .zeit-box { background: #333; font-weight: bold; cursor: default; }
@@ -61,9 +48,8 @@
         #loginOverlay button:hover { background: #d35400; }
         
         .klasse { font-weight: bold; }
-        .lehrer-info { font-size: 9px; color: #aaa; margin-top: 1px; } /* NEU: Für die Anzeige des Kürzels */
+        .lehrer-info { font-size: 9px; color: #aaa; margin-top: 1px; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; position: relative; z-index: 10; }
-        
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 5; }
         .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; height: 40px; }
         .save-btn { padding: 8px 20px; background: #e67e22; color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -108,7 +94,7 @@
     <script>
         const url = "https://script.google.com/macros/s/AKfycbzGG2N5Bg1lz_SDcckkaC1F6sEJa5gxnlmcgJ4TuPLv_4UqIfgq2CwcH8tMDM09VnOf/exec"; 
         let pendingChanges = [], configFarben = {}, userPw = "", userKuerzel = "", pressTimer;
-        let currentPlanData = [], lastStableDate = "", myClasses = [], allClassTeachers = {}; // allClassTeachers hinzugefügt
+        let currentPlanData = [], lastStableDate = "", myClasses = [], allClassTeachers = {};
 
         window.addEventListener('beforeunload', (e) => {
             if (pendingChanges.length > 0) { e.preventDefault(); e.returnValue = ''; }
@@ -137,7 +123,9 @@
             const btn = document.getElementById('loginBtn'), ball = document.getElementById('loginBall');
             const pwVal = document.getElementById('pwInput').value;
             const kuerzelVal = document.getElementById('kuerzelInput').value.trim().toLowerCase();
+            
             if(!kuerzelVal) { document.getElementById('loginError').innerText = "Kürzel fehlt!"; return; }
+            
             btn.style.display = 'none'; ball.classList.add('active');
             try {
                 const res = await fetch(`${url}?mode=login&pw=${pwVal}&kuerzel=${kuerzelVal}`);
@@ -167,7 +155,9 @@
             lastStableDate = dateVal; 
             updateNavButtons();
             const container = document.getElementById('plan');
+            
             container.innerHTML = ""; 
+            
             document.getElementById('globalLoader').style.display = 'block';
             const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
             const heute = new Date(); heute.setHours(12,0,0,0);
@@ -188,7 +178,7 @@
                 container.innerHTML = ""; pendingChanges = [];
                 currentPlanData = json.data; 
                 myClasses = json.userClasses || [];
-                allClassTeachers = json.allClassTeachers || {}; // Map vom Server laden
+                allClassTeachers = json.allClassTeachers || {}; // Map vom Server
                 const data = json.data, options = json.options;
                 configFarben = {}; options.forEach(opt => configFarben[opt[0]] = opt[1]);
                 const wtArr = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
@@ -198,6 +188,7 @@
                     if (rowIndex === 0) {
                         container.innerHTML += `<div class="box header-row"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
                     } else {
+                        // --- FILTER-LOGIK START ---
                         let belegteHallenInZeile = [];
                         for (let j = 1; j <= 5; j++) {
                             let cellVal = String(row[j] || "").trim();
@@ -208,21 +199,22 @@
                                 }
                             }
                         }
+                        // --- FILTER-LOGIK ENDE ---
 
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
                         container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                         for(let i = 1; i <= 5; i++) {
-                            let val = row[i] || "", teile = val.split(' | '), klasse = teile[0].trim(), res = teile[1] || "", kommentar = teile[2] || "";
+                            let val = row[i] || "", teile = val.split(' | '), klasse = teile[0], res = teile[1] || "", kommentar = teile[2] || "";
                             let isAusfall = (res === "Ausfall");
-                            let canEdit = myClasses.some(c => klasse === c.trim());
+                            let canEdit = myClasses.some(c => klasse.trim() === c.trim());
                             let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${kommentar.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
                             
-                            // Lehrer-Kürzel ermitteln (auch bei Kombi-Klassen wie 24a/24b)
-                            let teacher = klasse.split("/").map(k => allClassTeachers[k.trim()] || "").filter(t => t !== "").join(" / ");
+                            // Lehrer-Logik für Kombi-Klassen (trimmt alle Leerzeichen weg)
+                            let teacher = klasse.split('/').map(k => allClassTeachers[k.trim()] || "").filter(t => t !== "").join(" / ");
 
                             container.innerHTML += `
-                            <div class="box ${klasse === "" ? 'empty' : ''} ${!canEdit ? 'not-mine' : 'is-mine'} ${isAusfall ? 'ausfall-mode' : ''}" 
+                            <div class="box ${klasse.trim() === "" ? 'empty' : ''} ${!canEdit ? 'not-mine' : 'is-mine'} ${isAusfall ? 'ausfall-mode' : ''}" 
                                    data-row="${rowIndex}" data-col="${i}"
                                    oncontextmenu="${canEdit ? 'handleContextMenu(event, this)' : ''}" ontouchstart="${canEdit ? 'startTimer(this)' : ''}" ontouchend="clearTimer()" style="background-color: ${isAusfall ? '' : configFarben[res] || ''}">
                                    ${stiftHtml}
@@ -248,9 +240,6 @@
             document.getElementById('globalLoader').style.display = 'none';
         }
 
-        // ... Restliche Funktionen (addChange, saveChanges, handleExtraAction etc.) bleiben IDENTISCH wie in deinem Quelltext ...
-        // [Hier folgen deine Original-Funktionen ab getExistingComment bis zum Ende]
-
         function getExistingComment(r, c) {
             let val = (currentPlanData[r] && currentPlanData[r][c]) ? currentPlanData[r][c] : "";
             let teile = val.split(' | ');
@@ -266,8 +255,10 @@
             let comment = getExistingComment(r, c);
             let finalVal = (res === "" || res === "---") ? klasse : klasse + " | " + res;
             if (comment) finalVal += " | " + comment;
+            
             if (!currentPlanData[r]) currentPlanData[r] = [];
             currentPlanData[r][c] = finalVal;
+            
             pendingChanges.push({ time, slotIndex: slot, val: finalVal }); 
             document.getElementById('saveBtn').style.display = 'block';
         };
@@ -276,6 +267,7 @@
             const action = el.value, parent = el.parentElement, klasse = parent.querySelector('.klasse').innerText;
             const r = parent.getAttribute('data-row'), c = parent.getAttribute('data-col');
             let pureRes = parent.querySelector('.res').innerText.trim();
+            
             let finalVal = "";
             if (action === "ausfall") { 
                 parent.classList.add('ausfall-mode'); parent.style.backgroundColor = "";
@@ -291,14 +283,19 @@
                 } 
             } else if (action === "delete_comment") {
                 const s = parent.querySelector('.stift'); 
-                if (s) { s.remove(); finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes); }
+                if (s) {
+                    s.remove();
+                    finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes);
+                }
             }
+
             if (finalVal) {
                 if (!currentPlanData[r]) currentPlanData[r] = [];
                 currentPlanData[r][c] = finalVal;
                 pendingChanges.push({ time, slotIndex: slot, val: finalVal });
                 document.getElementById('saveBtn').style.display = 'block';
             }
+            
             closeAllExtraMenus(); el.value = "";
         };
 
@@ -311,7 +308,9 @@
             const hatStift = el.querySelector('.stift') !== null;
             const delOpt = sel.querySelector('.del-opt');
             if(delOpt) delOpt.style.display = hatStift ? "block" : "none";
-            sel.style.zIndex = "100"; sel.style.pointerEvents = "all"; sel.style.opacity = "1"; 
+            sel.style.zIndex = "100"; 
+            sel.style.pointerEvents = "all"; 
+            sel.style.opacity = "1"; 
             setTimeout(() => { if (sel.showPicker) { sel.showPicker(); } else { sel.click(); } }, 50); 
         }
         
@@ -330,24 +329,33 @@
                 }); 
                 const result = await response.json();
                 if (result.status === "success") {
-                    pendingChanges = []; ball.classList.remove('active'); 
-                    btn.innerText = "Check! ✅"; btn.classList.add('success'); btn.style.display = 'block'; 
+                    pendingChanges = []; 
+                    ball.classList.remove('active'); 
+                    btn.innerText = "Check! ✅"; 
+                    btn.classList.add('success'); 
+                    btn.style.display = 'block'; 
                     setTimeout(() => { 
-                        btn.style.display = 'none'; btn.classList.remove('success'); btn.innerText = "SPEICHERN"; 
+                        btn.style.display = 'none'; 
+                        btn.classList.remove('success'); 
+                        btn.innerText = "SPEICHERN"; 
                     }, 1000); 
                 } else { throw new Error(); }
             } catch (e) { 
-                ball.classList.remove('active'); btn.style.display = 'block'; btn.innerText = "Fehler!"; 
+                ball.classList.remove('active'); 
+                btn.style.display = 'block'; 
+                btn.innerText = "Fehler!"; 
             }
         };
 
         window.changeDate = (days) => { const dp = document.getElementById('datePicker'); let d = new Date(dp.value); d.setDate(d.getDate() + days); dp.valueAsDate = d; loadPlan(); };
+        
         window.goToToday = () => {
             const dp = document.getElementById('datePicker');
             const today = new Date();
             const offset = today.getTimezoneOffset();
             today.setMinutes(today.getMinutes() - offset);
-            dp.value = today.toISOString().split('T')[0];
+            const dateStr = today.toISOString().split('T')[0];
+            dp.value = dateStr;
             loadPlan();
         };
 
