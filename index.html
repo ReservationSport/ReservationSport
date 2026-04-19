@@ -8,16 +8,24 @@
         body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 2px; max-width: 1000px; margin: auto; }
         .date-control { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; position: relative; }
-        .global-loader { position: absolute; right: 0; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .nav-group { display: flex; gap: 5px; width: 90px; }
-        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; }
-        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         
+        .global-loader { position: absolute; left: 20px; width: 30px; height: 30px; border: 4px solid #444; border-top: 4px solid #27ae60; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .nav-group { display: flex; gap: 5px; }
+        #datePicker { padding: 10px; background: #333; color: white; border: 1px solid #444; height: 40px; box-sizing: border-box; cursor: pointer; border-radius: 4px; }
+        .nav-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 4px; }
+        .nav-btn:hover { background: #444; }
+        
+        /* Refresh Button Styling */
+        .refresh-btn { height: 40px; width: 40px; background: #333; border: 1px solid #444; color: #e67e22; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; border-radius: 4px; margin-left: 10px; }
+        .refresh-btn:hover { background: #444; color: #ff9f43; }
+        .refresh-btn:active i { animation: spin-once 0.5s ease-in-out; }
+        @keyframes spin-once { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .box { border: 1px solid #444; padding: 5px; background: #262626; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; position: relative; cursor: pointer; overflow: hidden; }
         .box.empty { pointer-events: none; opacity: 0.5; }
         
-        /* Editierbarkeit & Rahmen */
         .box.not-mine { pointer-events: none !important; } 
         .box.is-mine { border: 2px solid #e67e22 !important; z-index: 10; box-shadow: inset 0 0 10px rgba(230,126,34,0.3); }
 
@@ -46,8 +54,11 @@
         .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #d1d1d1; font-style: italic; font-size: 18px; }
         
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #loginOverlay input { padding: 10px; margin: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 5px; width: 220px; }
-        #loginOverlay button { padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 240px; }
+        #loginOverlay h2 { color: #e67e22; font-size: 2.2em; margin-bottom: 30px; font-weight: bold; }
+        #loginOverlay input { padding: 15px; margin: 8px; background: #333; border: 1px solid #444; color: white; border-radius: 8px; width: 280px; font-size: 16px; outline: none; }
+        #loginOverlay input:focus { border-color: #e67e22; }
+        #loginOverlay button { padding: 15px; margin-top: 15px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 310px; font-size: 18px; transition: background 0.2s; }
+        #loginOverlay button:hover { background: #d35400; }
         
         .klasse { font-weight: bold; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; position: relative; z-index: 10; }
@@ -67,33 +78,35 @@
 <body>
     <div id="loginOverlay">
         <h2>Reservation Sport</h2>
-        <input type="text" id="kuerzelInput" placeholder="Kürzel (z.B. bilu)" oninput="document.getElementById('loginError').innerText=''">
-        <input type="password" id="pwInput" placeholder="Passwort (bbzo)" oninput="document.getElementById('loginError').innerText=''">
+        <input type="text" id="kuerzelInput" placeholder="Kürzel" oninput="document.getElementById('loginError').innerText=''">
+        <input type="password" id="pwInput" placeholder="Passwort" oninput="document.getElementById('loginError').innerText=''">
         <button id="loginBtn" onclick="checkLogin()">Anmelden</button>
         <div id="loginBall" class="sport-loader" style="margin-top: 10px;">🏀</div>
         <p id="loginError" style="color: #e74c3c; margin-top: 10px;"></p>
     </div>
 
     <div class="date-control">
+        <div id="globalLoader" class="global-loader"></div>
         <div class="nav-group">
             <button id="btnPrevWeek" class="nav-btn" onclick="changeDate(-7)">⏮</button>
             <button id="btnPrevDay" class="nav-btn" onclick="changeDate(-1)">◀</button>
         </div>
+        <button id="btnToday" class="nav-btn" onclick="goToToday()" title="Heute"><i class="fas fa-house"></i></button>
         <input type="date" id="datePicker" onchange="loadPlan()">
-        <div class="nav-group">
+        <div class="nav-group" style="display: flex; align-items: center;">
             <button class="nav-btn" onclick="changeDate(1)">▶</button>
             <button class="nav-btn" onclick="changeDate(7)">⏭</button>
+            <button class="refresh-btn" onclick="loadPlan()" title="Tag aktualisieren">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
-        <div id="globalLoader" class="global-loader"></div>
     </div>
     <div class="grid" id="plan"></div>
 
     <script>
-        const url = "https://script.google.com/macros/s/AKfycbyr1LQvm7ceT7x40wir7F6JBF-v00WFtnOgMVGPMFolbTtVXff7bHWYlIEtn2SRgvEibw/exec"; 
+        const url = "https://script.google.com/macros/s/AKfycbxxtCiUNj_pm_uzMbGnVLvL0OswvsvPA4sM3n3RLRhaD8Vfq8_8vCQ30onpvrM4KhKB/exec"; 
         let pendingChanges = [], configFarben = {}, userPw = "", userKuerzel = "", pressTimer;
-        let currentPlanData = []; 
-        let lastStableDate = ""; 
-        let myClasses = [];
+        let currentPlanData = [], lastStableDate = "", myClasses = [];
 
         window.addEventListener('beforeunload', (e) => {
             if (pendingChanges.length > 0) { e.preventDefault(); e.returnValue = ''; }
@@ -109,7 +122,14 @@
             document.getElementById('btnPrevWeek').style.visibility = (lastWeek < heute) ? 'hidden' : 'visible';
         }
 
-        function closeAllExtraMenus() { document.querySelectorAll('.extra-select').forEach(sel => { sel.style.zIndex = "-1"; sel.style.pointerEvents = "none"; sel.style.opacity = "0"; sel.blur(); }); }
+        function closeAllExtraMenus() {
+            document.querySelectorAll('.extra-select').forEach(sel => {
+                sel.style.zIndex = "-1";
+                sel.style.pointerEvents = "none";
+                sel.style.opacity = "0";
+                sel.blur();
+            });
+        }
 
         async function checkLogin() {
             const btn = document.getElementById('loginBtn'), ball = document.getElementById('loginBall');
@@ -137,7 +157,7 @@
         async function loadPlan() {
             const dp = document.getElementById('datePicker');
             if (pendingChanges.length > 0) {
-                if (!confirm("Du hast ungespeicherte Änderungen. Trotzdem fortfahren?")) {
+                if (!confirm("Du hast ungespeicherte Änderungen. Diese gehen beim Aktualisieren verloren! Trotzdem fortfahren?")) {
                     dp.value = lastStableDate; 
                     return;
                 }
@@ -147,7 +167,9 @@
             lastStableDate = dateVal; 
             updateNavButtons();
             const container = document.getElementById('plan');
+            
             container.innerHTML = ""; 
+            
             document.getElementById('globalLoader').style.display = 'block';
             const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
             const heute = new Date(); heute.setHours(12,0,0,0);
@@ -172,19 +194,31 @@
                 configFarben = {}; options.forEach(opt => configFarben[opt[0]] = opt[1]);
                 const wtArr = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
                 const [y, m, d] = dateVal.split('-').map(Number);
+                
                 data.forEach((row, rowIndex) => {
-                    if (rowIndex === 0) container.innerHTML += `<div class="box header-row"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
-                    else {
+                    if (rowIndex === 0) {
+                        container.innerHTML += `<div class="box header-row"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
+                    } else {
+                        // --- FILTER-LOGIK START ---
+                        let belegteHallenInZeile = [];
+                        for (let j = 1; j <= 5; j++) {
+                            let cellVal = String(row[j] || "").trim();
+                            if (cellVal !== "") {
+                                let resPart = cellVal.split(' | ')[1] || cellVal.split(' | ')[0];
+                                if (resPart !== "Ausfall" && options.some(o => o[0] === resPart)) {
+                                    belegteHallenInZeile.push(resPart);
+                                }
+                            }
+                        }
+                        // --- FILTER-LOGIK ENDE ---
+
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
                         container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                         for(let i = 1; i <= 5; i++) {
                             let val = row[i] || "", teile = val.split(' | '), klasse = teile[0], res = teile[1] || "", kommentar = teile[2] || "";
                             let isAusfall = (res === "Ausfall");
-                            
-                            // GEÄNDERT: Jetzt exakter Vergleich statt .includes()
                             let canEdit = myClasses.some(c => klasse.trim() === c.trim());
-                            
                             let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${kommentar.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
                             
                             container.innerHTML += `
@@ -196,7 +230,8 @@
                                    <div class="res">${res}</div>
                                    ${canEdit ? `
                                    <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}'); closeAllExtraMenus();">
-                                       <option value="">---</option>${options.map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}
+                                       <option value="">---</option>
+                                       ${options.filter(o => !belegteHallenInZeile.includes(o[0]) || res === o[0]).map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}
                                    </select>
                                    <select class="extra-select" onchange="handleExtraAction(this, '${row[0]}', ${i})">
                                        <option value="">---</option>
@@ -227,6 +262,11 @@
             let comment = getExistingComment(r, c);
             let finalVal = (res === "" || res === "---") ? klasse : klasse + " | " + res;
             if (comment) finalVal += " | " + comment;
+            
+            // Lokale Daten aktualisieren
+            if (!currentPlanData[r]) currentPlanData[r] = [];
+            currentPlanData[r][c] = finalVal;
+            
             pendingChanges.push({ time, slotIndex: slot, val: finalVal }); 
             document.getElementById('saveBtn').style.display = 'block';
         };
@@ -236,27 +276,35 @@
             const r = parent.getAttribute('data-row'), c = parent.getAttribute('data-col');
             let pureRes = parent.querySelector('.res').innerText.trim();
             
+            let finalVal = "";
             if (action === "ausfall") { 
                 parent.classList.add('ausfall-mode'); parent.style.backgroundColor = "";
                 parent.querySelector('.res').innerText = "Ausfall"; 
                 let comment = getExistingComment(r, c);
-                let finalVal = klasse + " | Ausfall" + (comment ? " | " + comment : "");
-                pendingChanges.push({ time, slotIndex: slot, val: finalVal }); 
+                finalVal = klasse + " | Ausfall" + (comment ? " | " + comment : "");
             } else if (action === "kommentar") { 
                 const text = prompt("Notiz eingeben:"); 
                 if(text) { 
                     const s = parent.querySelector('.stift'); if (s) s.remove();
                     parent.innerHTML += `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${text}')"><i class="fas fa-comment-dots"></i></span>`;
-                    pendingChanges.push({ time, slotIndex: slot, val: klasse + " | " + (pureRes === "" ? "" : pureRes) + " | KOMMENTAR:" + text }); 
+                    finalVal = klasse + " | " + (pureRes === "" || pureRes === "Ausfall" ? pureRes : pureRes) + " | KOMMENTAR:" + text;
                 } 
             } else if (action === "delete_comment") {
                 const s = parent.querySelector('.stift'); 
                 if (s) {
                     s.remove();
-                    pendingChanges.push({ time, slotIndex: slot, val: klasse + " | " + (pureRes === "" ? "" : pureRes) });
+                    finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes);
                 }
             }
-            document.getElementById('saveBtn').style.display = 'block'; closeAllExtraMenus(); el.value = "";
+
+            if (finalVal) {
+                if (!currentPlanData[r]) currentPlanData[r] = [];
+                currentPlanData[r][c] = finalVal;
+                pendingChanges.push({ time, slotIndex: slot, val: finalVal });
+                document.getElementById('saveBtn').style.display = 'block';
+            }
+            
+            closeAllExtraMenus(); el.value = "";
         };
 
         window.startTimer = (el) => { pressTimer = setTimeout(() => { closeAllExtraMenus(); openExtraMenu(el); }, 500); };
@@ -298,18 +346,27 @@
                         btn.style.display = 'none'; 
                         btn.classList.remove('success'); 
                         btn.innerText = "SPEICHERN"; 
-                    }, 1500); 
+                    }, 1000); 
                 } else { throw new Error(); }
             } catch (e) { 
                 ball.classList.remove('active'); 
                 btn.style.display = 'block'; 
                 btn.innerText = "Fehler!"; 
-                alert("Speichern fehlgeschlagen. Seite wird neu geladen...");
-                loadPlan();
             }
         };
 
         window.changeDate = (days) => { const dp = document.getElementById('datePicker'); let d = new Date(dp.value); d.setDate(d.getDate() + days); dp.valueAsDate = d; loadPlan(); };
+        
+        window.goToToday = () => {
+            const dp = document.getElementById('datePicker');
+            const today = new Date();
+            const offset = today.getTimezoneOffset();
+            today.setMinutes(today.getMinutes() - offset);
+            const dateStr = today.toISOString().split('T')[0];
+            dp.value = dateStr;
+            loadPlan();
+        };
+
         document.addEventListener('DOMContentLoaded', () => { 
             const today = new Date(); const offset = today.getTimezoneOffset(); today.setMinutes(today.getMinutes() - offset); 
             const dateStr = today.toISOString().split('T')[0];
