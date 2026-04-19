@@ -32,18 +32,19 @@
         .box.ausfall-mode { background-color: #000000 !important; color: #777777 !important; background-image: linear-gradient(to top right, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)), linear-gradient(to top left, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)); }
         .box.ausfall-mode .klasse { color: #777777; }
         .box.ausfall-mode .res { color: #555555; }
+        .box.ausfall-mode .lehrer-info { display: none; }
 
         .stift { 
             position: absolute; 
-            top: 2px;          
-            right: 4px;          
+            top: 2px;           
+            right: 4px;           
             z-index: 50; 
             color: #e67e22; 
             cursor: pointer; 
             pointer-events: auto; 
             display: inline-block; 
-            font-size: 22px;    
-            line-height: 1;     
+            font-size: 22px;     
+            line-height: 1;      
             text-shadow: 0 0 5px rgba(0,0,0,1); 
             transition: transform 0.2s ease;
         }
@@ -61,6 +62,7 @@
         #loginOverlay button:hover { background: #d35400; }
         
         .klasse { font-weight: bold; }
+        .lehrer-info { font-size: 9px; color: #aaa; margin-top: 1px; }
         .res { font-style: italic; font-size: 9px; margin-top: 2px; position: relative; z-index: 10; }
         select { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 5; }
         .save-container { position: absolute; right: 10px; z-index: 10; display: flex; align-items: center; height: 40px; }
@@ -104,9 +106,9 @@
     <div class="grid" id="plan"></div>
 
     <script>
-        const url = "https://script.google.com/macros/s/AKfycbzGG2N5Bg1lz_SDcckkaC1F6sEJa5gxnlmcgJ4TuPLv_4UqIfgq2CwcH8tMDM09VnOf/exec"; 
+        const url = "https://script.google.com/macros/s/AKfycbxxtCiUNj_pm_uzMbGnVLvL0OswvsvPA4sM3n3RLRhaD8Vfq8_8vCQ30onpvrM4KhKB/exec"; 
         let pendingChanges = [], configFarben = {}, userPw = "", userKuerzel = "", pressTimer;
-        let currentPlanData = [], lastStableDate = "", myClasses = [];
+        let currentPlanData = [], lastStableDate = "", myClasses = [], allClassTeachers = {};
 
         window.addEventListener('beforeunload', (e) => {
             if (pendingChanges.length > 0) { e.preventDefault(); e.returnValue = ''; }
@@ -190,6 +192,7 @@
                 container.innerHTML = ""; pendingChanges = [];
                 currentPlanData = json.data; 
                 myClasses = json.userClasses || [];
+                allClassTeachers = json.allClassTeachers || {};
                 const data = json.data, options = json.options;
                 configFarben = {}; options.forEach(opt => configFarben[opt[0]] = opt[1]);
                 const wtArr = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
@@ -199,7 +202,6 @@
                     if (rowIndex === 0) {
                         container.innerHTML += `<div class="box header-row"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
                     } else {
-                        // --- FILTER-LOGIK START ---
                         let belegteHallenInZeile = [];
                         for (let j = 1; j <= 5; j++) {
                             let cellVal = String(row[j] || "").trim();
@@ -210,7 +212,6 @@
                                 }
                             }
                         }
-                        // --- FILTER-LOGIK ENDE ---
 
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
@@ -221,12 +222,16 @@
                             let canEdit = myClasses.some(c => klasse.trim() === c.trim());
                             let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${kommentar.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
                             
+                            // Lehrer-Kürzel finden
+                            let lehrerKuerzel = allClassTeachers[klasse.trim()] || "";
+                            
                             container.innerHTML += `
                             <div class="box ${klasse.trim() === "" ? 'empty' : ''} ${!canEdit ? 'not-mine' : 'is-mine'} ${isAusfall ? 'ausfall-mode' : ''}" 
                                    data-row="${rowIndex}" data-col="${i}"
                                    oncontextmenu="${canEdit ? 'handleContextMenu(event, this)' : ''}" ontouchstart="${canEdit ? 'startTimer(this)' : ''}" ontouchend="clearTimer()" style="background-color: ${isAusfall ? '' : configFarben[res] || ''}">
                                    ${stiftHtml}
                                    <div class="klasse">${klasse}</div>
+                                   ${klasse.trim() !== "" ? `<div class="lehrer-info">${lehrerKuerzel}</div>` : ""}
                                    <div class="res">${res}</div>
                                    ${canEdit ? `
                                    <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}'); closeAllExtraMenus();">
@@ -263,7 +268,6 @@
             let finalVal = (res === "" || res === "---") ? klasse : klasse + " | " + res;
             if (comment) finalVal += " | " + comment;
             
-            // Lokale Daten aktualisieren
             if (!currentPlanData[r]) currentPlanData[r] = [];
             currentPlanData[r][c] = finalVal;
             
