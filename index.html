@@ -44,11 +44,27 @@
         .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
         .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #d1d1d1; font-style: italic; font-size: 18px; }
         
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #loginOverlay h2 { color: #e67e22; font-size: 2.2em; margin-bottom: 30px; font-weight: bold; }
-        #loginOverlay input { padding: 15px; margin: 8px; background: #333; border: 1px solid #444; color: white; border-radius: 8px; width: 280px; font-size: 16px; outline: none; }
+        /* Login Screen Styles */
+        #loginOverlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #000; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 600' preserveAspectRatio='none'%3E%3Cpath d='M0 0h1000v600H0z' fill='none'/%3E%3Cg stroke='%23333' stroke-width='2' fill='none' opacity='0.5'%3E%3Crect x='50' y='50' width='900' height='500'/%3E%3Cpath d='M500 50v500'/%3E%3Ccircle cx='500' cy='300' r='60'/%3E%3Cpath d='M50 160h120v280H50M950 160H830v280h120M50 210h70v180H50M950 210H880v180h70'/%3E%3Cpath d='M170 300a60 60 0 0 1 0-120M830 180a60 60 0 0 1 0 120'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: cover;
+            background-position: center;
+            z-index: 2000; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        #loginOverlay h2 { color: #e67e22; font-size: 2.2em; margin-bottom: 30px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        #loginOverlay input { padding: 15px; margin: 8px; background: rgba(34, 34, 34, 0.9); border: 1px solid #444; color: white; border-radius: 8px; width: 280px; font-size: 16px; outline: none; }
         #loginOverlay input:focus { border-color: #e67e22; }
-        #loginOverlay button { padding: 15px; margin-top: 15px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 310px; font-size: 18px; transition: background 0.2s; }
+        #loginOverlay button { padding: 15px; margin-top: 15px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 310px; font-size: 18px; transition: background 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         #loginOverlay button:hover { background: #d35400; }
         
         .klasse { font-weight: bold; }
