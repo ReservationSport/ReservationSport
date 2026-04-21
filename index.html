@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reservation Sport - Original Full Version</title>
+    <title>Reservation Sport - Full System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -35,7 +35,7 @@
             border: 1px solid var(--border);
         }
 
-        /* Navigation & Header Controls */
+        /* Navigation & Header */
         .date-control { 
             text-align: center; 
             margin-bottom: 20px; 
@@ -85,7 +85,6 @@
             justify-content: center; 
             font-size: 16px; 
             border-radius: 4px; 
-            transition: background 0.2s;
         }
         .nav-btn:hover { background: #444; }
 
@@ -102,9 +101,8 @@
             font-size: 18px; 
             border-radius: 4px; 
         }
-        .refresh-btn:hover { background: #444; }
 
-        /* Box Styling & states */
+        /* Zellen-Styling */
         .box { 
             border: 1px solid #333; 
             padding: 5px; 
@@ -119,19 +117,17 @@
             position: relative; 
             cursor: pointer; 
             overflow: hidden; 
-            transition: background 0.1s;
         }
 
         .box.empty { pointer-events: none; opacity: 0.5; background: #1a1a1a; }
         .box.not-mine { pointer-events: none !important; opacity: 0.8; } 
-        .box.is-mine { border: 2px solid var(--accent) !important; z-index: 5; box-shadow: inset 0 0 10px rgba(230,126,34,0.1); }
+        .box.is-mine { border: 2px solid var(--accent) !important; z-index: 5; }
 
         .box.ausfall-mode { 
             background-color: #000 !important; 
             background-image: linear-gradient(45deg, #111 25%, transparent 25%, transparent 50%, #111 50%, #111 75%, transparent 75%, transparent);
             background-size: 20px 20px;
         }
-        .box.ausfall-mode .klasse { color: #777; }
         .box.ausfall-mode .res { color: var(--red); font-weight: bold; }
 
         .box.outdoor-mode { background-color: var(--green) !important; }
@@ -145,10 +141,9 @@
             color: var(--accent); 
             font-size: 20px; 
             text-shadow: 0 0 4px #000;
-            cursor: pointer;
         }
 
-        .zeit-box { background: #333; font-weight: bold; cursor: default; color: #aaa; border-color: #222; }
+        .zeit-box { background: #333; font-weight: bold; cursor: default; color: #aaa; }
         .header-row { 
             grid-column: span 6; 
             background: #333; 
@@ -159,12 +154,11 @@
             justify-content: center; 
             height: 50px; 
             position: relative;
-            border-bottom: 1px solid #555;
         }
 
-        .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; font-size: 16px; }
+        .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #888; font-style: italic; }
 
-        /* Dropdowns & Selects */
+        /* Form-Elemente */
         select { 
             width: 100%; 
             height: 100%; 
@@ -174,7 +168,6 @@
             opacity: 0; 
             cursor: pointer; 
             z-index: 2; 
-            -webkit-appearance: none;
         }
         .extra-select { 
             z-index: -1; 
@@ -183,7 +176,7 @@
             position: absolute;
         }
 
-        /* Login Overlay Styling */
+        /* Login-Overlay */
         #loginOverlay { 
             position: fixed; 
             top: 0; 
@@ -197,7 +190,6 @@
             justify-content: center; 
             align-items: center; 
         }
-        #loginOverlay h2 { color: var(--accent); margin-bottom: 25px; font-size: 24px; }
         #loginOverlay input { 
             padding: 15px; 
             margin: 8px; 
@@ -207,9 +199,7 @@
             border-radius: 8px; 
             width: 280px; 
             font-size: 16px; 
-            outline: none;
         }
-        #loginOverlay input:focus { border-color: var(--accent); }
         #loginOverlay button { 
             padding: 15px; 
             margin-top: 15px; 
@@ -221,11 +211,9 @@
             font-weight: bold; 
             width: 310px; 
             font-size: 18px; 
-            transition: background 0.2s;
         }
-        #loginOverlay button:hover { background: #d35400; }
 
-        /* Save Button & Loaders */
+        /* Speichern */
         .save-container { position: absolute; right: 10px; display: flex; align-items: center; gap: 10px; }
         .save-btn { 
             padding: 8px 20px; 
@@ -237,62 +225,51 @@
             cursor: pointer; 
             display: none; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-            transition: all 0.2s;
         }
-        .save-btn:hover { transform: scale(1.05); }
         .save-btn.success { background: var(--green); }
         
-        .sport-loader { font-size: 22px; display: none; }
+        .sport-loader { font-size: 20px; display: none; }
         .sport-loader.active { display: block; animation: bounce 0.6s infinite alternate; }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
-        /* Structure Elements */
         .divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
         .divider-thick { grid-column: 1 / span 6; height: 4px; background: #555; margin: 5px 0; }
 
-        .klasse { font-weight: bold; font-size: 12px; }
+        .klasse { font-weight: bold; }
         .lehrer-info { font-size: 9px; color: #999; margin-top: 1px; }
-        .res { font-style: italic; font-size: 9px; margin-top: 2px; color: var(--accent); min-height: 11px; }
+        .res { font-style: italic; font-size: 9px; margin-top: 2px; color: var(--accent); }
 
-        /* Desktop Adjustments */
-        @media (min-width: 601px) {
-            .box:hover:not(.not-mine):not(.empty) { background: #333; }
-        }
-
-        /* Mobile Adjustments */
         @media (max-width: 600px) {
             .grid { grid-template-columns: 70px repeat(5, 1fr); }
             body { padding: 5px; }
-            .box { font-size: 10px; min-height: 50px; padding: 2px; }
+            .box { font-size: 10px; min-height: 50px; }
             .lehrer-info { display: none; }
-            .header-row { font-size: 12px; }
-            #datePicker { font-size: 14px; padding: 5px; }
         }
     </style>
 </head>
 <body onclick="closeAllExtraMenus()">
 
     <div id="loginOverlay">
-        <h2>Reservation Sport</h2>
+        <h2 style="color:var(--accent); margin-bottom:20px;">Reservation Sport</h2>
         <input type="text" id="kuerzelInput" placeholder="Kürzel">
         <input type="password" id="pwInput" placeholder="Passwort">
         <button id="loginBtn" onclick="checkLogin()">Anmelden</button>
         <div id="loginBall" class="sport-loader">🏀</div>
-        <p id="loginError" style="color: var(--red); margin-top: 15px; font-weight: bold;"></p>
+        <p id="loginError" style="color: var(--red); margin-top: 10px;"></p>
     </div>
 
     <div class="date-control">
         <div id="globalLoader" class="global-loader"></div>
         <div class="nav-group">
-            <button class="nav-btn" onclick="changeDate(-7)" title="Woche zurück">⏮</button>
-            <button class="nav-btn" onclick="changeDate(-1)" title="Tag zurück">◀</button>
+            <button class="nav-btn" onclick="changeDate(-7)">⏮</button>
+            <button class="nav-btn" onclick="changeDate(-1)">◀</button>
         </div>
-        <button class="nav-btn" onclick="goToToday()" title="Heute"><i class="fas fa-home"></i></button>
+        <button class="nav-btn" onclick="goToToday()"><i class="fas fa-home"></i></button>
         <input type="date" id="datePicker" onchange="loadPlan()">
         <div class="nav-group">
-            <button class="nav-btn" onclick="changeDate(1)" title="Tag vor">▶</button>
-            <button class="nav-btn" onclick="changeDate(7)" title="Woche vor">⏭</button>
-            <button class="refresh-btn" onclick="loadPlan()" title="Aktualisieren"><i class="fas fa-sync-alt"></i></button>
+            <button class="nav-btn" onclick="changeDate(1)">▶</button>
+            <button class="nav-btn" onclick="changeDate(7)">⏭</button>
+            <button class="refresh-btn" onclick="loadPlan()"><i class="fas fa-sync-alt"></i></button>
         </div>
     </div>
 
@@ -303,40 +280,32 @@
         let pendingChanges = [], configFarben = {}, userPw = "", userKuerzel = "", pressTimer;
         let currentPlanData = [], lastStableDate = "", myClasses = [], allClassTeachers = {};
 
-        // Verhindert Datenverlust beim Schließen/Refresh
-        window.onbeforeunload = (e) => { 
-            if(pendingChanges.length > 0) {
-                e.preventDefault();
-                return (e.returnValue = "Du hast ungespeicherte Änderungen!");
-            }
-        };
+        // Warnung beim Verlassen
+        window.onbeforeunload = () => { if(pendingChanges.length > 0) return "Änderungen nicht gespeichert!"; };
 
         async function checkLogin() {
-            const btn = document.getElementById('loginBtn'), ball = document.getElementById('loginBall'), err = document.getElementById('loginError');
+            const btn = document.getElementById('loginBtn'), ball = document.getElementById('loginBall');
             const pw = document.getElementById('pwInput').value;
             const kz = document.getElementById('kuerzelInput').value.trim().toLowerCase();
-            if(!kz || !pw) { err.innerText = "Bitte Felder ausfüllen"; return; }
-            btn.style.display = 'none'; ball.classList.add('active'); err.innerText = "";
+            if(!kz || !pw) return;
+            btn.style.display = 'none'; ball.classList.add('active');
             try {
                 const res = await fetch(`${url}?mode=login&pw=${pw}&kuerzel=${kz}`);
                 const json = await res.json();
                 if (json.error) {
-                    err.innerText = "Login ungültig";
+                    document.getElementById('loginError').innerText = "Login ungültig";
                     btn.style.display = 'block'; ball.classList.remove('active');
                 } else {
                     userPw = pw; userKuerzel = kz;
                     document.getElementById('loginOverlay').style.display = 'none';
                     loadPlan();
                 }
-            } catch(e) { 
-                err.innerText = "Verbindungsfehler";
-                btn.style.display = 'block'; ball.classList.remove('active'); 
-            }
+            } catch(e) { btn.style.display = 'block'; ball.classList.remove('active'); }
         }
 
         async function loadPlan() {
             const dp = document.getElementById('datePicker');
-            if (pendingChanges.length > 0 && !confirm("Ungespeicherte Änderungen gehen verloren! Fortfahren?")) {
+            if (pendingChanges.length > 0 && !confirm("Ungespeicherte Änderungen gehen verloren!")) {
                 dp.value = lastStableDate; return;
             }
             lastStableDate = dp.value;
@@ -351,7 +320,7 @@
                 } else {
                     renderGrid(json);
                 }
-            } catch(e) { console.error("Load Error:", e); }
+            } catch(e) { console.error(e); }
             document.getElementById('globalLoader').style.display = 'none';
         }
 
@@ -366,14 +335,11 @@
             const data = json.data, options = json.options;
             options.forEach(o => configFarben[o[0]] = o[1]);
             
-            const dateObj = new Date(document.getElementById('datePicker').value);
-            const displayDate = dateObj.toLocaleDateString('de-DE', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
-
             data.forEach((row, rowIndex) => {
                 if (rowIndex === 0) {
                     container.innerHTML += `
                         <div class="box header-row">
-                            <span>${displayDate}</span>
+                            <span>${new Date(document.getElementById('datePicker').value).toLocaleDateString('de-DE', {weekday:'long', day:'2-digit', month:'2-digit'})}</span>
                             <div class="save-container">
                                 <div id="sport-loader" class="sport-loader">🏀</div>
                                 <button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button>
@@ -385,7 +351,7 @@
                     
                     container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
                     
-                    // Belegung der aktuellen Reihe prüfen
+                    // Belegung der aktuellen Reihe prüfen (für Dropdown-Validierung)
                     let usedInRow = [];
                     for(let j=1; j<=5; j++) {
                         let r = (row[j]||"").split(' | ')[1];
@@ -429,7 +395,7 @@
             });
         }
 
-        // --- Logik Funktionen ---
+        // --- Logik ---
 
         window.addChange = (el, time, slot, klasse) => {
             const res = el.value, p = el.parentElement, r = p.dataset.row, c = p.dataset.col;
@@ -444,7 +410,7 @@
             let currentRes = p.querySelector('.res').innerText;
             let currentComm = getComment(r, c);
 
-            if (act === "") { 
+            if (act === "") { // DER RESET (dein Wunsch: Striche löschen Halle/Status)
                 p.classList.remove('ausfall-mode', 'outdoor-mode');
                 p.style.backgroundColor = "";
                 p.querySelector('.res').innerText = "";
@@ -467,18 +433,19 @@
         };
 
         function updatePending(r, c, time, slot, kl, res, comm) {
+            // Hier wird der String zusammengesetzt: KLASSE | RES | KOMMENTAR
             let val = kl + (res ? " | " + res : " | ") + (comm ? " | " + comm : "");
             currentPlanData[r][c] = val;
             pendingChanges = pendingChanges.filter(ch => !(ch.time === time && ch.slotIndex === slot));
             pendingChanges.push({ time, slotIndex: slot, val });
             document.getElementById('saveBtn').style.display = 'block';
-            if(comm !== undefined && (comm.includes("KOMMENTAR:") || comm === "")) loadPlan();
+            // Kleiner UI-Refresh für den Stift
+            if(comm !== undefined) loadPlan();
         }
 
         function getComment(r, c) {
             const val = currentPlanData[r][c] || "";
-            const parts = val.split(' | ');
-            return parts[2] || "";
+            return val.split(' | ')[2] || "";
         }
 
         window.saveChanges = async () => {
@@ -511,7 +478,7 @@
             }
         };
 
-        // --- UI & Helper ---
+        // --- Hilfen ---
 
         window.handleRightClick = (e, el) => { e.preventDefault(); openExtra(el); };
         window.handleTouchStart = (el) => { pressTimer = setTimeout(() => openExtra(el), 600); };
