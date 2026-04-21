@@ -208,7 +208,7 @@
                             let val = row[i] || "", teile = val.split(' | '), klasse = teile[0], res = teile[1] || "", kommentar = teile[2] || "";
                             let isAusfall = (res === "Ausfall");
                             let canEdit = myClasses.some(c => klasse.trim() === c.trim());
-                            let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${comment.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
+                            let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${kommentar.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
                             
                             // Lehrer-Logik für Kombi-Klassen (trimmt alle Leerzeichen weg)
                             let teacher = klasse.split('/').map(k => allClassTeachers[k.trim()] || "").filter(t => t !== "").join(" / ");
@@ -226,15 +226,11 @@
                                        <option value="">---</option>
                                        ${options.filter(o => {
                                            const optName = o[0];
-                                           // Wenn diese Option bereits die aktuell gewählte ist, anzeigen
                                            if (res === optName) return true;
-                                           // Wenn die Option generell belegt ist, ausfiltern
                                            if (belegteHallenInZeile.includes(optName)) return false;
                                            
-                                           // ERWEITERTE LOGIK:
-                                           // Wenn Halle 1 oder Halle 2 belegt ist -> Halle 1 + 2 sperren
+                                           // Logik für überschneidende Hallen
                                            if (optName === "Halle 1 + 2" && (belegteHallenInZeile.includes("Halle 1") || belegteHallenInZeile.includes("Halle 2"))) return false;
-                                           // Wenn Halle 1 + 2 belegt ist -> Halle 1 und Halle 2 sperren
                                            if (belegteHallenInZeile.includes("Halle 1 + 2") && (optName === "Halle 1" || optName === "Halle 2")) return false;
                                            
                                            return true;
