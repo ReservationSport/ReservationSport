@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Reservation Sport</title>
+    <title>Reservation Sport neu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; }
@@ -28,7 +28,6 @@
         .box.not-mine { pointer-events: none !important; } 
         .box.is-mine { border: 2px solid #e67e22 !important; z-index: 10; box-shadow: inset 0 0 10px rgba(230,126,34,0.3); }
 
-        /* Spezial-Modi */
         .box.ausfall-mode { background-color: #000000 !important; color: #777777 !important; background-image: linear-gradient(to top right, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)), linear-gradient(to top left, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)); }
         .box.ausfall-mode .klasse { color: #777777; }
         .box.ausfall-mode .res { color: #555555; }
@@ -44,7 +43,6 @@
         .header-row { grid-column: span 6; background: #333; font-size: 14px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; height: 50px; }
         .info-box { grid-column: span 6; padding: 40px; text-align: center; color: #d1d1d1; font-style: italic; font-size: 18px; }
         
-        /* Login Screen Styles */
         #loginOverlay { 
             position: fixed; 
             top: 0; 
@@ -141,9 +139,7 @@
             const btn = document.getElementById('loginBtn'), ball = document.getElementById('loginBall');
             const pwVal = document.getElementById('pwInput').value;
             const kuerzelVal = document.getElementById('kuerzelInput').value.trim().toLowerCase();
-            
             if(!kuerzelVal) { document.getElementById('loginError').innerText = "Kürzel fehlt!"; return; }
-            
             btn.style.display = 'none'; ball.classList.add('active');
             try {
                 const res = await fetch(`${url}?mode=login&pw=${pwVal}&kuerzel=${kuerzelVal}`);
@@ -173,9 +169,7 @@
             lastStableDate = dateVal; 
             updateNavButtons();
             const container = document.getElementById('plan');
-            
             container.innerHTML = ""; 
-            
             document.getElementById('globalLoader').style.display = 'block';
             const dateObj = new Date(dateVal); dateObj.setHours(12,0,0,0);
             const heute = new Date(); heute.setHours(12,0,0,0);
@@ -206,27 +200,29 @@
                     if (rowIndex === 0) {
                         container.innerHTML += `<div class="box header-row"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span><div class="save-container"><div id="sport-loader" class="sport-loader">🏀</div><button id="saveBtn" class="save-btn" onclick="saveChanges()">SPEICHERN</button></div></div>`;
                     } else {
-                        let belegteHallenInZeile = [];
-                        for (let j = 1; j <= 5; j++) {
-                            let cellVal = String(row[j] || "").trim();
-                            if (cellVal !== "") {
-                                let resPart = cellVal.split(' | ')[1] || "";
-                                if (resPart && resPart !== "Ausfall" && resPart !== "Outdoor") {
-                                    belegteHallenInZeile.push(resPart);
-                                }
-                            }
-                        }
-
                         if (rowIndex === 4 || rowIndex === 10) container.innerHTML += `<div class="divider-thin"></div>`;
                         if (rowIndex === 7) container.innerHTML += `<div class="divider-thick"></div>`;
                         container.innerHTML += `<div class="box zeit-box">${row[0]}</div>`;
+                        
                         for(let i = 1; i <= 5; i++) {
+                            // BELEGUNG PRÜFEN (für diesen spezifischen Slot i)
+                            let belegteHallenInZeileOhneMich = [];
+                            for (let k = 1; k <= 5; k++) {
+                                if (k === i) continue; // Den eigenen Slot ignorieren!
+                                let otherVal = String(row[k] || "").trim();
+                                if (otherVal !== "") {
+                                    let resPart = otherVal.split(' | ')[1] || "";
+                                    if (resPart && resPart !== "Ausfall" && resPart !== "Outdoor") {
+                                        belegteHallenInZeileOhneMich.push(resPart);
+                                    }
+                                }
+                            }
+
                             let val = row[i] || "", teile = val.split(' | '), klasse = teile[0], res = teile[1] || "", kommentar = teile[2] || "";
                             let isAusfall = (res === "Ausfall");
                             let isOutdoor = (res === "Outdoor");
                             let canEdit = myClasses.some(c => klasse.trim() === c.trim());
                             let stiftHtml = (kommentar.startsWith("KOMMENTAR:")) ? `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${kommentar.replace('KOMMENTAR:', '')}')"><i class="fas fa-comment-dots"></i></span>` : "";
-                            
                             let teacher = klasse.split('/').map(k => allClassTeachers[k.trim()] || "").filter(t => t !== "").join(" / ");
 
                             container.innerHTML += `
@@ -242,8 +238,10 @@
                                        <option value="">---</option>
                                        ${options.filter(o => {
                                            const optName = o[0];
+                                           // Wenn es die aktuell gewählte Option ist, immer anzeigen
                                            if (res === optName) return true;
-                                           let istGesperrt = belegteHallenInZeile.some(belegt => {
+                                           // Prüfen ob Teile dieser Option bereits von KOLLEGEN belegt sind
+                                           let istGesperrt = belegteHallenInZeileOhneMich.some(belegt => {
                                                let belegtParts = belegt.split(/[\s+]+/).filter(p => p.length > 0 && p !== "Halle");
                                                let optParts = optName.split(/[\s+]+/).filter(p => p.length > 0 && p !== "Halle");
                                                return optParts.some(p => belegtParts.includes(p));
@@ -281,10 +279,8 @@
             let comment = getExistingComment(r, c);
             let finalVal = (res === "" || res === "---") ? klasse : klasse + " | " + res;
             if (comment) finalVal += " | " + comment;
-            
             if (!currentPlanData[r]) currentPlanData[r] = [];
             currentPlanData[r][c] = finalVal;
-            
             pendingChanges.push({ time, slotIndex: slot, val: finalVal }); 
             document.getElementById('saveBtn').style.display = 'block';
         };
@@ -293,7 +289,6 @@
             const action = el.value, parent = el.parentElement, klasse = parent.querySelector('.klasse').innerText;
             const r = parent.getAttribute('data-row'), c = parent.getAttribute('data-col');
             let pureRes = parent.querySelector('.res').innerText.trim();
-            
             let finalVal = "";
             if (action === "outdoor") {
                 parent.classList.remove('ausfall-mode');
@@ -318,26 +313,20 @@
                 } 
             } else if (action === "delete_comment") {
                 const s = parent.querySelector('.stift'); 
-                if (s) {
-                    s.remove();
-                    finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes);
-                }
+                if (s) { s.remove(); finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes); }
             }
-
             if (finalVal) {
                 if (!currentPlanData[r]) currentPlanData[r] = [];
                 currentPlanData[r][c] = finalVal;
                 pendingChanges.push({ time, slotIndex: slot, val: finalVal });
                 document.getElementById('saveBtn').style.display = 'block';
             }
-            
             closeAllExtraMenus(); el.value = "";
         };
 
         window.startTimer = (el) => { pressTimer = setTimeout(() => { openExtraMenu(el); }, 500); };
         window.clearTimer = () => clearTimeout(pressTimer);
         window.handleContextMenu = (e, el) => { e.preventDefault(); e.stopPropagation(); openExtraMenu(el); };
-        
         function openExtraMenu(el) { 
             closeAllExtraMenus();
             const sel = el.querySelector('.extra-select'); 
@@ -384,7 +373,6 @@
         };
 
         window.changeDate = (days) => { const dp = document.getElementById('datePicker'); let d = new Date(dp.value); d.setDate(d.getDate() + days); dp.valueAsDate = d; loadPlan(); };
-        
         window.goToToday = () => {
             const dp = document.getElementById('datePicker');
             const today = new Date();
