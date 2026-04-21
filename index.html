@@ -67,7 +67,7 @@
         .extra-select { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: -1; pointer-events: none; }
     </style>
 </head>
-<body>
+<body onclick="closeAllExtraMenus()">
     <div id="loginOverlay">
         <h2>Reservation Sport</h2>
         <input type="text" id="kuerzelInput" placeholder="Kürzel" oninput="document.getElementById('loginError').innerText=''">
@@ -119,7 +119,6 @@
                 sel.style.zIndex = "-1";
                 sel.style.pointerEvents = "none";
                 sel.style.opacity = "0";
-                sel.blur();
             });
         }
 
@@ -224,7 +223,7 @@
                                    <div class="lehrer-info">${teacher}</div>
                                    <div class="res">${res}</div>
                                    ${canEdit ? `
-                                   <select onchange="addChange(this, '${row[0]}', ${i}, '${klasse}'); closeAllExtraMenus();">
+                                   <select onclick="event.stopPropagation()" onchange="addChange(this, '${row[0]}', ${i}, '${klasse}');">
                                        <option value="">---</option>
                                        ${options.filter(o => {
                                            const optName = o[0];
@@ -237,7 +236,7 @@
                                            return !istGesperrt;
                                        }).map(o => `<option value="${o[0]}" ${res === o[0] ? 'selected' : ''}>${o[0]}</option>`).join('')}
                                    </select>
-                                   <select class="extra-select" onchange="handleExtraAction(this, '${row[0]}', ${i})">
+                                   <select class="extra-select" onclick="event.stopPropagation()" onchange="handleExtraAction(this, '${row[0]}', ${i})">
                                        <option value="">---</option>
                                        <option value="outdoor">🌳 Outdoor</option>
                                        <option value="ausfall">❌ Ausfall</option>
@@ -300,7 +299,7 @@
                 if(text) { 
                     const s = parent.querySelector('.stift'); if (s) s.remove();
                     parent.innerHTML += `<span class="stift" onclick="event.stopPropagation(); alert('Notiz: ${text}')"><i class="fas fa-comment-dots"></i></span>`;
-                    finalVal = klasse + " | " + (pureRes === "" ? "" : pureRes) + " | KOMMENTAR:" + text;
+                    finalVal = klasse + " | " + (pureRes === "" || pureRes === "Outdoor" || pureRes === "Ausfall" ? pureRes : pureRes) + " | KOMMENTAR:" + text;
                 } 
             } else if (action === "delete_comment") {
                 const s = parent.querySelector('.stift'); 
@@ -320,11 +319,12 @@
             closeAllExtraMenus(); el.value = "";
         };
 
-        window.startTimer = (el) => { pressTimer = setTimeout(() => { closeAllExtraMenus(); openExtraMenu(el); }, 500); };
+        window.startTimer = (el) => { pressTimer = setTimeout(() => { openExtraMenu(el); }, 500); };
         window.clearTimer = () => clearTimeout(pressTimer);
-        window.handleContextMenu = (e, el) => { e.preventDefault(); closeAllExtraMenus(); openExtraMenu(el); };
+        window.handleContextMenu = (e, el) => { e.preventDefault(); e.stopPropagation(); openExtraMenu(el); };
         
         function openExtraMenu(el) { 
+            closeAllExtraMenus();
             const sel = el.querySelector('.extra-select'); 
             const hatStift = el.querySelector('.stift') !== null;
             const delOpt = sel.querySelector('.del-opt');
